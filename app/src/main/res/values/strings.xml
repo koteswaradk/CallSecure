@@ -1,0 +1,146 @@
+<resources>
+    <!-- App Info -->
+    <string name="app_name">SmartCallShield</string>
+    <string name="app_version">1.0.0</string>
+    <string name="app_description">AI-powered spam call blocker with privacy-first design</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_title">SmartCallShield</string>
+    <string name="dashboard_call_mode">Call Mode</string>
+    <string name="dashboard_statistics">Today\'s Statistics</string>
+    <string name="dashboard_premium_badge">✨ Premium Features Unlocked</string>
+    <string name="dashboard_blocked_calls">Blocked Calls</string>
+    <string name="dashboard_spam_prevented">Spam Prevented</string>
+    <string name="dashboard_driving_replies">Driving Mode Replies</string>
+
+    <!-- Mode Names -->
+    <string name="mode_normal">Normal</string>
+    <string name="mode_family">Family</string>
+    <string name="mode_driving">Driving</string>
+    <string name="mode_emergency">Emergency</string>
+    <string name="mode_sleep">Sleep</string>
+
+    <!-- Mode Descriptions -->
+    <string name="mode_normal_desc">Standard call handling with spam filtering</string>
+    <string name="mode_family_desc">Only family contacts allowed</string>
+    <string name="mode_driving_desc">Auto-reply to calls while driving</string>
+    <string name="mode_emergency_desc">Emergency contacts always ring through</string>
+    <string name="mode_sleep_desc">All calls silent except emergency</string>
+
+    <!-- Contacts Screen -->
+    <string name="contacts_title">Contacts Management</string>
+    <string name="contacts_all">All</string>
+    <string name="contacts_whitelist">Whitelist</string>
+    <string name="contacts_blacklist">Blacklist</string>
+    <string name="contacts_emergency">Emergency</string>
+    <string name="contacts_family">Family</string>
+    <string name="contacts_add">Add Contact</string>
+    <string name="contacts_edit">Edit Contact</string>
+    <string name="contacts_delete">Delete</string>
+    <string name="contacts_empty">No contacts found</string>
+    <string name="contacts_phone_number">Phone Number</string>
+    <string name="contacts_display_name">Display Name (optional)</string>
+    <string name="contacts_category">Category</string>
+    <string name="contacts_is_emergency">Mark as Emergency</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_spam_detection">Spam Detection</string>
+    <string name="settings_enable_spam_detection">Enable Spam Detection</string>
+    <string name="settings_spam_detection_desc">Use AI to detect spam calls</string>
+    <string name="settings_auto_reject_spam">Auto-Reject Spam</string>
+    <string name="settings_auto_reject_spam_desc">Automatically reject detected spam calls</string>
+    <string name="settings_confidence_threshold">Confidence Threshold</string>
+    <string name="settings_confidence_threshold_desc">Minimum AI confidence score for spam detection</string>
+
+    <string name="settings_driving_mode">Driving Mode</string>
+    <string name="settings_enable_driving_mode">Enable Driving Mode</string>
+    <string name="settings_driving_mode_desc">Automatically handle calls while driving</string>
+    <string name="settings_driving_mode_message">Auto-Reply Message</string>
+    <string name="settings_driving_mode_message_default">I\'m currently driving. I will call you back shortly.</string>
+    <string name="settings_driving_mode_gps">GPS-Based Detection</string>
+    <string name="settings_driving_mode_gps_desc">Automatically detect driving via location</string>
+
+    <string name="settings_privacy">Privacy &amp; Data</string>
+    <string name="settings_analytics">Analytics</string>
+    <string name="settings_analytics_desc">Help improve the app with usage data</string>
+    <string name="settings_cloud_sync">Cloud Sync (Premium)</string>
+    <string name="settings_cloud_sync_desc">Sync your settings across devices</string>
+    <string name="settings_auto_reject_unknown">Auto-Reject Unknown</string>
+    <string name="settings_auto_reject_unknown_desc">Block calls from unknown numbers</string>
+    <string name="settings_ring_count">Rings Before Auto-Reply</string>
+
+    <!-- Analytics Screen -->
+    <string name="analytics_title">Analytics Dashboard</string>
+    <string name="analytics_overview">Overview</string>
+    <string name="analytics_trends">Trends</string>
+    <string name="analytics_export">Export</string>
+    <string name="analytics_this_month">This Month</string>
+    <string name="analytics_total_blocked">Total Blocked Calls</string>
+    <string name="analytics_spam_prevented">Spam Calls Prevented</string>
+    <string name="analytics_driving_replies">Driving Mode Auto-Replies</string>
+    <string name="analytics_insights">Insights</string>
+    <string name="analytics_peak_hours">Peak Hours</string>
+    <string name="analytics_peak_hours_desc">Most calls occur between 2-4 PM</string>
+    <string name="analytics_driving_mode_usage">Driving Mode</string>
+    <string name="analytics_driving_mode_usage_desc">Active on average 45 minutes per day</string>
+    <string name="analytics_privacy_protected">Privacy Protected</string>
+    <string name="analytics_privacy_protected_desc">All data processed locally on device</string>
+    <string name="analytics_graph_visualization">📈 Graph visualization</string>
+    <string name="analytics_real_time_trends">Real-time trend analysis</string>
+    <string name="analytics_export_history">Export Call History</string>
+    <string name="analytics_export_history_desc">Download your complete call logs</string>
+    <string name="analytics_export_report">Export Analytics Report</string>
+    <string name="analytics_export_report_desc">Download detailed analytics and insights</string>
+
+    <!-- Common Buttons -->
+    <string name="button_add">Add</string>
+    <string name="button_cancel">Cancel</string>
+    <string name="button_delete">Delete</string>
+    <string name="button_edit">Edit</string>
+    <string name="button_save">Save</string>
+    <string name="button_ok">OK</string>
+    <string name="button_close">Close</string>
+    <string name="button_export">Export</string>
+    <string name="button_import">Import</string>
+
+    <!-- Messages -->
+    <string name="msg_success">Success</string>
+    <string name="msg_error">Error</string>
+    <string name="msg_loading">Loading...</string>
+    <string name="msg_no_data">No data available</string>
+    <string name="msg_contact_added">Contact added successfully</string>
+    <string name="msg_contact_deleted">Contact deleted successfully</string>
+    <string name="msg_invalid_phone_number">Invalid phone number</string>
+    <string name="msg_permission_denied">Permission denied</string>
+    <string name="msg_requires_permission">This feature requires permission</string>
+
+    <!-- Notifications -->
+    <string name="notif_driving_mode_active">Driving Mode Active</string>
+    <string name="notif_driving_mode_desc">Incoming calls will be handled safely</string>
+    <string name="notif_call_blocked">Call Blocked</string>
+    <string name="notif_spam_detected">Spam Detected</string>
+    <string name="notif_sms_sent">Auto-Reply Sent</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_contacts">Contacts</string>
+    <string name="nav_analytics">Analytics</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Permissions -->
+    <string name="perm_call_log">Call Log Access</string>
+    <string name="perm_phone_state">Phone State</string>
+    <string name="perm_send_sms">Send SMS</string>
+    <string name="perm_read_contacts">Read Contacts</string>
+    <string name="perm_location">Location Access</string>
+
+    <!-- About -->
+    <string name="about_title">About SmartCallShield</string>
+    <string name="about_version">Version %s</string>
+    <string name="about_privacy_policy">Privacy Policy</string>
+    <string name="about_terms">Terms of Service</string>
+    <string name="about_github">GitHub</string>
+    <string name="about_email">support@smartcallshield.com</string>
+</resources>
+

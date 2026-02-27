@@ -1,0 +1,78 @@
+package com.akshaglobal.smartcallshield.di
+
+import android.content.Context
+import com.akshaglobal.smartcallshield.data.database.SmartCallShieldDatabase
+import com.akshaglobal.smartcallshield.data.dao.CallLogDao
+import com.akshaglobal.smartcallshield.data.dao.ContactDao
+import com.akshaglobal.smartcallshield.data.dao.SpamReportDao
+import com.akshaglobal.smartcallshield.data.dao.DrivingModeLogDao
+import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
+import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+    @Singleton
+    @Provides
+    fun provideDatabase(
+        @ApplicationContext context: Context
+    ): SmartCallShieldDatabase {
+        return SmartCallShieldDatabase.getDatabase(context)
+    }
+
+    @Singleton
+    @Provides
+    fun provideCallLogDao(database: SmartCallShieldDatabase): CallLogDao {
+        return database.callLogDao()
+    }
+
+    @Singleton
+    @Provides
+    fun provideContactDao(database: SmartCallShieldDatabase): ContactDao {
+        return database.contactDao()
+    }
+
+    @Singleton
+    @Provides
+    fun provideSpamReportDao(database: SmartCallShieldDatabase): SpamReportDao {
+        return database.spamReportDao()
+    }
+
+    @Singleton
+    @Provides
+    fun provideDrivingModeLogDao(database: SmartCallShieldDatabase): DrivingModeLogDao {
+        return database.drivingModeLogDao()
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object PreferencesModule {
+    @Singleton
+    @Provides
+    fun providePreferencesManager(
+        @ApplicationContext context: Context
+    ): PreferencesManager {
+        return PreferencesManager(context)
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object AiModule {
+    @Singleton
+    @Provides
+    fun provideSpamDetectionModel(
+        @ApplicationContext context: Context
+    ): SpamDetectionModel {
+        val model = SpamDetectionModel(context)
+        model.initialize()
+        return model
+    }
+}
