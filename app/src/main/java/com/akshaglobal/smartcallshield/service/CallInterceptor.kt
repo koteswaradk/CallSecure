@@ -8,16 +8,23 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import com.akshaglobal.smartcallshield.data.model.CallLogEntity
 import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
 import com.akshaglobal.smartcallshield.domain.usecase.HandleCallUseCase
 import com.akshaglobal.smartcallshield.domain.usecase.CallDecision
+import dagger.hilt.android.EntryPointAccessors
+import com.akshaglobal.smartcallshield.di.CallInterceptorEntryPoint
+import com.akshaglobal.smartcallshield.util.PhoneNumberUtils
+import com.akshaglobal.smartcallshield.utils.SmsSender
+import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 
 class CallInterceptor : BroadcastReceiver() {
 
-    // If using DI, these would be injected. For compilation they are declared nullable and can be set via setter.
-    var handleCallUseCase: HandleCallUseCase? = null
-    var callLogRepository: CallLogRepository? = null
+    private lateinit var handleCallUseCase: HandleCallUseCase
+    private lateinit var callLogRepository: CallLogRepository
+    private lateinit var smsSender: SmsSender
+    private lateinit var preferencesManager: PreferencesManager
 
     private var ringStartTime: Long = 0
     private var ringCount: Int = 0
@@ -25,10 +32,18 @@ class CallInterceptor : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) return
 
+        // obtain Hilt dependencies via EntryPoint
+        val entryPoint = EntryPointAccessors.fromApplication(context.applicationContext, CallInterceptorEntryPoint::class.java)
+        handleCallUseCase = entryPoint.handleCallUseCase()
+        callLogRepository = entryPoint.callLogRepository()
+        smsSender = entryPoint.smsSender()
+        preferencesManager = entryPoint.preferencesManager()
+
         when (intent.action) {
             TelephonyManager.ACTION_PHONE_STATE_CHANGED -> {
                 val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
-                val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+                val incomingNumberRaw = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+                val incomingNumber = PhoneNumberUtils.normalize(incomingNumberRaw)
 
                 when (state) {
                     TelephonyManager.EXTRA_STATE_RINGING -> {
@@ -40,6 +55,7 @@ class CallInterceptor : BroadcastReceiver() {
                     TelephonyManager.EXTRA_STATE_IDLE -> {
                         // Call ended
                         ringCount = 0
+                        ringStartTime = 0
                     }
                 }
             }
@@ -67,7 +83,7 @@ class CallInterceptor : BroadcastReceiver() {
 
         scope.launch {
             try {
-                val decision = handleCallUseCase?.invoke(phoneNumber) ?: CallDecision.ALLOW
+                val decision = handleCallUseCase.invoke(phoneNumber)
 
                 // Log the call
                 val callLog = CallLogEntity(
@@ -77,7 +93,19 @@ class CallInterceptor : BroadcastReceiver() {
                     isSpam = decision == CallDecision.REJECT || decision == CallDecision.SILENT,
                     wasBlocked = decision == CallDecision.REJECT || decision == CallDecision.SILENT
                 )
-                callLogRepository?.addCallLog(callLog)
+                callLogRepository.addCallLog(callLog)
+
+                // Driving mode auto-reply: check ring count threshold and preference
+                val ringThreshold = preferencesManager.ringCountThreshold.first()
+                val drivingEnabled = preferencesManager.drivingModeEnabled.first()
+                val autoReplyMessage = preferencesManager.drivingModeAutoReply.first()
+
+                if (drivingEnabled && ringCount >= ringThreshold) {
+                    // Send auto-reply SMS
+                    smsSender.sendSms(phoneNumber, autoReplyMessage)
+                    // Reset ring count to avoid duplicate messages
+                    ringCount = 0
+                }
 
                 // Handle decision
                 when (decision) {
@@ -91,7 +119,9 @@ class CallInterceptor : BroadcastReceiver() {
                     }
                     CallDecision.REPLY_SMS -> {
                         Log.d(TAG, "Replying with SMS to: $phoneNumber")
-                        // Send auto-reply SMS (handled separately)
+                        // Use smsSender with default message
+                        val defaultMsg = preferencesManager.drivingModeAutoReply.first()
+                        smsSender.sendSms(phoneNumber, defaultMsg)
                     }
                     CallDecision.ALLOW -> {
                         Log.d(TAG, "Allowing call from: $phoneNumber")
@@ -106,13 +136,14 @@ class CallInterceptor : BroadcastReceiver() {
     private fun logOutgoingCall(context: Context, phoneNumber: String) {
         CoroutineScope(Dispatchers.Default).launch {
             try {
+                val normalized = PhoneNumberUtils.normalize(phoneNumber)
                 val callLog = CallLogEntity(
-                    phoneNumber = phoneNumber,
+                    phoneNumber = normalized,
                     timestamp = System.currentTimeMillis(),
                     callType = com.akshaglobal.smartcallshield.data.model.CallType.OUTGOING.ordinal,
                     duration = 0
                 )
-                callLogRepository?.addCallLog(callLog)
+                callLogRepository.addCallLog(callLog)
             } catch (e: Exception) {
                 Log.e(TAG, "Error logging outgoing call", e)
             }

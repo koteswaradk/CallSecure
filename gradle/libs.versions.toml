@@ -17,6 +17,7 @@ tensorflow = "2.14.0"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
 protobuf = "3.25.1"
+accompanist = "0.34.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -53,6 +54,7 @@ protobuf-kotlin = { group = "com.google.protobuf", name = "protobuf-kotlin", ver
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version = "2.8.0" }
 androidx-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version = "2.8.0" }
 gson = { group = "com.google.code.gson", name = "gson", version = "2.10.1" }
+accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

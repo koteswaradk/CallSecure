@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ContactDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertContact(contact: ContactEntity)
+    suspend fun insertContact(contact: ContactEntity): Long
 
     @Update
     suspend fun updateContact(contact: ContactEntity)

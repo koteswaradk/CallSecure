@@ -1,5 +1,6 @@
 package com.akshaglobal.smartcallshield.presentation.ui.screens
 
+import android.Manifest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,8 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -31,15 +37,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberPermissionState
 import com.akshaglobal.smartcallshield.presentation.viewmodel.SettingsViewModel
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel = hiltViewModel(),
+    onNavigateToCallModes: () -> Unit = {}
+) {
     val spamDetectionEnabled by viewModel.spamDetectionEnabled.collectAsState()
     val drivingModeEnabled by viewModel.drivingModeEnabled.collectAsState()
     val drivingModeAutoReply by viewModel.drivingModeAutoReply.collectAsState()
     val spamConfidenceThreshold by viewModel.spamConfidenceThreshold.collectAsState()
     val autoRejectSpam by viewModel.autoRejectSpam.collectAsState()
+
+    val contactsPermissionState = rememberPermissionState(Manifest.permission.READ_CONTACTS)
 
     Column(
         modifier = Modifier
@@ -121,6 +135,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Call Modes Management Section
+        SettingsSectionHeader("Call Modes Management")
+        CallModeManagementCard(
+            onNavigate = {
+                // Just navigate - permission will be handled in CallModesManagementScreen
+                onNavigateToCallModes()
+            }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         // Privacy Section
         SettingsSectionHeader("Privacy & Data")
         SettingCard(
@@ -136,7 +161,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             title = "Cloud Sync (Premium)",
             description = "Sync your settings across devices",
             isEnabled = false,
-            onToggle = { }
+            onToggle = {
+            }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -188,3 +214,37 @@ private fun SettingCard(
     }
 }
 
+@Composable
+private fun CallModeManagementCard(
+    onNavigate: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Create & Manage Modes", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Setup Normal, Family, Driving, Emergency modes", fontSize = 12.sp, color = Color.Gray)
+            }
+            Button(
+                onClick = onNavigate,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Setup", fontSize = 12.sp)
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(Icons.Default.ArrowForward, contentDescription = "Setup modes")
+            }
+        }
+    }
+}

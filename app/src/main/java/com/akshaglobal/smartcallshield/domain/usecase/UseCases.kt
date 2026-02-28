@@ -8,6 +8,7 @@ import com.akshaglobal.smartcallshield.data.repository.ContactRepository
 import com.akshaglobal.smartcallshield.data.repository.SpamReportRepository
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
+import com.akshaglobal.smartcallshield.data.repository.ModeRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -122,9 +123,14 @@ class HandleCallUseCase @Inject constructor(
     private val detectSpamUseCase: DetectSpamUseCase,
     private val callLogRepository: CallLogRepository,
     private val contactRepository: ContactRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val modeRepository: ModeRepository
 ) {
     suspend operator fun invoke(phoneNumber: String): CallDecision {
+        // First check active mode permissions
+        val allowedByMode = modeRepository.isPhoneAllowedInActiveMode(phoneNumber)
+        if (!allowedByMode) return CallDecision.REJECT
+
         // Get spam detection result
         val spamResult = detectSpamUseCase(phoneNumber)
 
@@ -148,4 +154,3 @@ enum class CallDecision {
     SILENT,
     REPLY_SMS
 }
-

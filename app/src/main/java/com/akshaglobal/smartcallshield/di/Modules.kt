@@ -6,8 +6,11 @@ import com.akshaglobal.smartcallshield.data.dao.CallLogDao
 import com.akshaglobal.smartcallshield.data.dao.ContactDao
 import com.akshaglobal.smartcallshield.data.dao.SpamReportDao
 import com.akshaglobal.smartcallshield.data.dao.DrivingModeLogDao
+import com.akshaglobal.smartcallshield.data.dao.ModeDao
+import com.akshaglobal.smartcallshield.data.repository.ModeRepository
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
+import com.akshaglobal.smartcallshield.utils.SmsSender
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,6 +52,18 @@ object DatabaseModule {
     fun provideDrivingModeLogDao(database: SmartCallShieldDatabase): DrivingModeLogDao {
         return database.drivingModeLogDao()
     }
+
+    @Singleton
+    @Provides
+    fun provideModeDao(database: SmartCallShieldDatabase): ModeDao {
+        return database.modeDao()
+    }
+
+    @Singleton
+    @Provides
+    fun provideModeRepository(modeDao: ModeDao, contactDao: ContactDao): ModeRepository {
+        return ModeRepository(modeDao, contactDao)
+    }
 }
 
 @Module
@@ -74,5 +89,15 @@ object AiModule {
         val model = SpamDetectionModel(context)
         model.initialize()
         return model
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object MessagingModule {
+    @Singleton
+    @Provides
+    fun provideSmsSender(@ApplicationContext context: Context): SmsSender {
+        return SmsSender(context)
     }
 }

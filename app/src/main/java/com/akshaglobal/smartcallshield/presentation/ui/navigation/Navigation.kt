@@ -22,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.akshaglobal.smartcallshield.presentation.ui.screens.AnalyticsScreen
+import com.akshaglobal.smartcallshield.presentation.ui.screens.CallModesManagementScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.ContactsScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.DashboardScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.SettingsScreen
@@ -31,6 +32,7 @@ sealed class Screen(val route: String, val label: String) {
     object Contacts : Screen("contacts", "Contacts")
     object Analytics : Screen("analytics", "Analytics")
     object Settings : Screen("settings", "Settings")
+    object CallModes : Screen("callmodes", "Call Modes")
 }
 
 @Composable
@@ -54,6 +56,7 @@ fun MainNavigation() {
                         Screen.Contacts -> Icons.Default.Phone
                         Screen.Analytics -> Icons.Default.Info
                         Screen.Settings -> Icons.Default.Settings
+                        else -> Icons.Default.Settings
                     }
 
                     NavigationBarItem(
@@ -87,7 +90,14 @@ fun MainNavigation() {
                 AnalyticsScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(
+                    onNavigateToCallModes = {
+                        navController.navigate(Screen.CallModes.route)
+                    }
+                )
+            }
+            composable(Screen.CallModes.route) {
+                CallModesManagementScreen()
             }
         }
     }

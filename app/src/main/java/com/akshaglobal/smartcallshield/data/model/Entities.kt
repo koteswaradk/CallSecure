@@ -2,7 +2,14 @@ package com.akshaglobal.smartcallshield.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Embedded
+import androidx.room.Relation
+import androidx.room.Junction
+import androidx.room.ForeignKey
+import androidx.room.Index
 import java.util.Date
+
+import androidx.room.ColumnInfo
 
 @Entity(tableName = "contacts")
 data class ContactEntity(
@@ -90,3 +97,62 @@ enum class CallType {
     MISSED
 }
 
+// New entities for call modes
+@Entity(tableName = "call_modes")
+data class ModeEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val name: String,
+    val isActive: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    primaryKeys = ["modeId", "contactId"],
+    tableName = "mode_contact_cross_ref",
+    foreignKeys = [
+        ForeignKey(
+            entity = ModeEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["modeId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = ContactEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["contactId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["modeId"]),
+        Index(value = ["contactId"])
+    ]
+)
+data class ModeContactCrossRef(
+    val modeId: Long,
+    val contactId: Long
+)
+
+// Convenience relation object
+data class ModeWithContacts(
+    @Embedded val mode: ModeEntity,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "id",
+        associateBy = Junction(
+            value = ModeContactCrossRef::class,
+            parentColumn = "modeId",
+            entityColumn = "contactId"
+        )
+    )
+    val contacts: List<ContactEntity>
+)
+
+// DTO for device contacts fetched from ContentResolver
+data class DeviceContact(
+    val id: String,
+    val displayName: String,
+    val phoneNumber: String
+)
