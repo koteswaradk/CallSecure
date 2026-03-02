@@ -60,10 +60,19 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
     val isAppEnabled by viewModel.isAppEnabled.collectAsState()
     val deviceContacts by callModesViewModel.deviceContacts.collectAsState()
 
+    // Always allow the switch to be toggled
+    // Enable Normal mode button if NORMAL mode exists
+
     // Always reload modes and contacts from the database when DashboardScreen is recomposed
+    LaunchedEffect(Unit) {
+        callModesViewModel.loadModes()
+    }
     LaunchedEffect(modes, deviceContacts) {
         callModesViewModel.syncModesAndContacts()
     }
+
+    // Add a loading state: wait until modes are loaded and currentMode is not null
+    val isLoading = modes.isEmpty() || currentMode == null
 
     Column(
         modifier = Modifier
@@ -84,8 +93,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
-            // Enable switch if any mode has contacts (enabledModes contains true)
-            val canEnableSwitch = enabledModes.values.any { it }
+            // Switch is always enabled
             Switch(
                 checked = isAppEnabled,
                 onCheckedChange = { checked ->
@@ -95,7 +103,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                         showDisableDialog = true
                     }
                 },
-                enabled = canEnableSwitch || isAppEnabled // Allow disabling even if no mode is present
+                enabled = true
             )
         }
         if (showWarningDialog) {
@@ -110,13 +118,13 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                         viewModel.toggleAppEnabled()
                         viewModel.setMode(CallMode.NORMAL)
                         showWarningDialog = false
-                        SmartCallShieldApp.isCallShieldEnabled=true
+                        SmartCallShieldApp.isCallShieldEnabled = true
                     }) { Text("OK") }
                 },
                 dismissButton = {
                     Button(onClick = {
                         showWarningDialog = false
-                        SmartCallShieldApp.isCallShieldEnabled=false
+                        SmartCallShieldApp.isCallShieldEnabled = false
                     }) { Text("Cancel") }
                 },
                 modifier = Modifier.fillMaxWidth(0.95f)
@@ -132,6 +140,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                 confirmButton = {
                     Button(onClick = {
                         viewModel.toggleAppEnabled()
+                        // Optionally, clear the mode or set to a disabled state
                         showDisableDialog = false
                     }) { Text("OK") }
                 },
@@ -145,15 +154,13 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
         }
         if (showEnableDialog) {
             androidx.compose.material3.AlertDialog(
-                onDismissRequest = {},
+                onDismissRequest = { showEnableDialog = false },
                 title = { Text("Enable CallShield") },
                 text = {
-                    Text("To Enable the CallShield, create the call modes from the settings call modes management and then select the call modes first. Then you can enable the CallShield.")
+                    Text("To enable CallShield, you must first create a 'NORMAL' mode in Call Modes Management.")
                 },
                 confirmButton = {
-                    Button(onClick = {
-                        showEnableDialog = false
-                    }) {
+                    Button(onClick = { showEnableDialog = false }) {
                         Text("Close")
                     }
                 },
@@ -213,16 +220,16 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
-        val modeSelectorEnabled = modes.isNotEmpty()
-        // Only use enabledModes for selector logic
+        // ModeSelector: All modes disabled if switch is off. Normal enabled if switch is on. Others only if contacts exist.
         ModeSelector(
             currentMode,
-            enabled = modeSelectorEnabled,
-            normalEnabled = enabledModes["NORMAL"] == true,
-            familyEnabled = enabledModes["FAMILY"] == true,
-            drivingEnabled = enabledModes["DRIVING"] == true,
-            emergencyEnabled = enabledModes["EMERGENCY"] == true
+            enabled = isAppEnabled,
+            normalEnabled = isAppEnabled,
+            familyEnabled = isAppEnabled && enabledModes["FAMILY"] == true,
+            drivingEnabled = isAppEnabled && enabledModes["DRIVING"] == true,
+            emergencyEnabled = isAppEnabled && enabledModes["EMERGENCY"] == true
         ) { newMode ->
+            if (!isAppEnabled) return@ModeSelector // Don't allow mode change if app is disabled
             val modeName = when (newMode) {
                 CallMode.FAMILY -> "FAMILY"
                 CallMode.DRIVING -> "DRIVING"
@@ -231,18 +238,42 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
             }
             val modeEntity = modes.find { it.name.equals(modeName, ignoreCase = true) }
             val hasContacts = enabledModes[modeName] == true
-            if (modeEntity == null) {
+            if (modeName != "NORMAL" && !hasContacts) {
+                showModeErrorDialog = "No contacts found for $modeName mode. Please add contacts to this category in the contacts table."
+                return@ModeSelector
+            }
+            if (modeEntity == null && modeName != "NORMAL") {
                 showModeErrorDialog = "No $modeName mode found. Please create it in Call Modes Management."
                 return@ModeSelector
             }
-            if (!hasContacts) {
-                showModeErrorDialog = "$modeName mode has no contacts. Please add contacts to this mode."
-            } else if (newMode != CallMode.NORMAL) {
+            // Show confirmation dialog for mode change
+            if (currentMode != newMode) {
                 pendingMode = newMode
                 showModeChangeDialog = true
-            } else {
-                viewModel.setMode(newMode)
             }
+        }
+        if (showModeChangeDialog && pendingMode != null) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Change Call Mode") },
+                text = {
+                    Text("CallShield will be applied to the selected mode. Press OK to switch mode.")
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.setMode(pendingMode!!)
+                        showModeChangeDialog = false
+                        pendingMode = null
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        showModeChangeDialog = false
+                        pendingMode = null
+                    }) { Text("Cancel") }
+                },
+                modifier = Modifier.fillMaxWidth(0.95f)
+            )
         }
         if (showModeErrorDialog != null) {
             androidx.compose.material3.AlertDialog(

@@ -12,12 +12,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -26,6 +26,8 @@ import com.akshaglobal.smartcallshield.presentation.ui.screens.CallModesManageme
 import com.akshaglobal.smartcallshield.presentation.ui.screens.ContactsScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.DashboardScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.SettingsScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.akshaglobal.smartcallshield.presentation.viewmodel.DashboardViewModel
 
 sealed class Screen(val route: String, val label: String) {
     object Dashboard : Screen("dashboard", "Dashboard")
@@ -39,7 +41,9 @@ sealed class Screen(val route: String, val label: String) {
 fun MainNavigation() {
     val navController = rememberNavController()
     var selectedTab by remember { mutableIntStateOf(0) }
-
+    // Shared DashboardViewModel for app state
+    val dashboardViewModel: DashboardViewModel = hiltViewModel()
+    val isAppEnabled by dashboardViewModel.isAppEnabled.collectAsState()
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -81,7 +85,7 @@ fun MainNavigation() {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Screen.Dashboard.route) {
-                DashboardScreen()
+                DashboardScreen(viewModel = dashboardViewModel)
             }
             composable(Screen.Contacts.route) {
                 ContactsScreen()
@@ -90,7 +94,7 @@ fun MainNavigation() {
                 AnalyticsScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(isAppEnabled = isAppEnabled)
             }
             composable(Screen.CallModes.route) {
                 CallModesManagementScreen()

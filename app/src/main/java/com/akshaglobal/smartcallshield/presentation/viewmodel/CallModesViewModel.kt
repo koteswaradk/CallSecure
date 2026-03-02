@@ -61,10 +61,15 @@ class CallModesViewModel @Inject constructor(
             val modeMap = mutableMapOf<String, Boolean>()
             for (mode in _modes.value) {
                 val category = mode.name.trim().uppercase()
-                val contacts = contactRepository.getContactsByCategory(category).firstOrNull() ?: emptyList()
-                // Check contact category robustly
-                val hasContacts = contacts.any { it.category.trim().uppercase() == category }
-                modeMap[category] = hasContacts
+                if (category == "NORMAL") {
+                    // Always enable NORMAL if mode exists
+                    modeMap[category] = true
+                } else {
+                    val contacts = contactRepository.getContactsByCategory(category).firstOrNull() ?: emptyList()
+                    // Check contact category robustly
+                    val hasContacts = contacts.any { it.category.trim().uppercase() == category }
+                    modeMap[category] = hasContacts
+                }
             }
             _enabledModes.value = modeMap
         }

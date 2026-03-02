@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -56,11 +57,9 @@ import java.util.Locale
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    isAppEnabled: Boolean // <-- Add this parameter
 ) {
-
-    val showDrivingAlert = remember { mutableStateOf(false) }
-    val showNoContactsAlert = remember { mutableStateOf(false) }
     val spamDetectionEnabled by viewModel.spamDetectionEnabled.collectAsState()
     val drivingModeEnabled by viewModel.drivingModeEnabled.collectAsState()
     val drivingModeAutoReply by viewModel.drivingModeAutoReply.collectAsState()
@@ -82,13 +81,25 @@ fun SettingsScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        // Synchronize spam detection and auto-reject spam with app switch
+        LaunchedEffect(isAppEnabled) {
+            if (isAppEnabled) {
+                if (!spamDetectionEnabled) viewModel.setSpamDetectionEnabled(true)
+                if (!autoRejectSpam) viewModel.setAutoRejectSpam(true)
+            } else {
+                if (spamDetectionEnabled) viewModel.setSpamDetectionEnabled(false)
+                if (autoRejectSpam) viewModel.setAutoRejectSpam(false)
+            }
+        }
+
         // Spam Detection Section
         SettingsSectionHeader("Spam Detection")
         SettingCard(
             title = "Enable Spam Detection",
             description = "Use AI to detect spam calls",
             isEnabled = spamDetectionEnabled,
-            onToggle = { viewModel.setSpamDetectionEnabled(it) }
+            onToggle = { viewModel.setSpamDetectionEnabled(it) },
+            enabled = isAppEnabled // Only enable if app is enabled
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -97,7 +108,8 @@ fun SettingsScreen(
             title = "Auto-Reject Spam",
             description = "Automatically reject detected spam calls",
             isEnabled = autoRejectSpam,
-            onToggle = { viewModel.setAutoRejectSpam(it) }
+            onToggle = { viewModel.setAutoRejectSpam(it) },
+            enabled = isAppEnabled // Only enable if app is enabled
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -195,7 +207,8 @@ private fun SettingCard(
     title: String,
     description: String,
     isEnabled: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
+    enabled: Boolean = true // <-- Add enabled parameter
 ) {
     Card(
         modifier = Modifier
@@ -216,7 +229,8 @@ private fun SettingCard(
             }
             Switch(
                 checked = isEnabled,
-                onCheckedChange = onToggle
+                onCheckedChange = onToggle,
+                enabled = enabled // <-- Control enabled state
             )
         }
     }
@@ -277,7 +291,7 @@ private fun CreateModeAlertDialog(
     var selectedContacts by remember { mutableStateOf<Set<String>>(emptySet()) }
     var showModeDropdown by remember { mutableStateOf(false) }
 
-    val predefinedModes = listOf("Normal", "Family", "Driving", "Emergency")
+    val predefinedModes = listOf("Family", "Driving", "Emergency")
 
     // Request permission and load contacts on first load
     LaunchedEffect(Unit) {
@@ -343,7 +357,7 @@ private fun CreateModeAlertDialog(
                 DropdownMenu(
                     expanded = showModeDropdown,
                     onDismissRequest = { showModeDropdown = false },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.widthIn(max = 250.dp).fillMaxWidth()
                 ) {
                     predefinedModes.forEach { mode ->
                         DropdownMenuItem(
