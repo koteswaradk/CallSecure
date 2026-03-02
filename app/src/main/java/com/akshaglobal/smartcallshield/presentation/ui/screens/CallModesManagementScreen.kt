@@ -1,6 +1,7 @@
 package com.akshaglobal.smartcallshield.presentation.ui.screens
 
 import android.Manifest
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -59,6 +62,14 @@ private fun CallModesManagementScreenPreview() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CallModesManagementScreen(viewModel: CallModesViewModel = hiltViewModel()) {
+    val context = LocalContext.current
+    // Remove showToast lambda logic, only use toastEvent collector
+    LaunchedEffect(viewModel) {
+        viewModel.toastEvent.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     val deviceContacts by viewModel.deviceContacts.collectAsState()
     val modes by viewModel.modes.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -379,4 +390,3 @@ private fun CreateModeDialog(
         }
     )
 }
-

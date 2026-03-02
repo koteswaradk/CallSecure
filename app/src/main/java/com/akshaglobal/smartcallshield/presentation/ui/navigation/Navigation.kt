@@ -90,11 +90,7 @@ fun MainNavigation() {
                 AnalyticsScreen()
             }
             composable(Screen.Settings.route) {
-                SettingsScreen(
-                    onNavigateToCallModes = {
-                        navController.navigate(Screen.CallModes.route)
-                    }
-                )
+                SettingsScreen()
             }
             composable(Screen.CallModes.route) {
                 CallModesManagementScreen()

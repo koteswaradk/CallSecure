@@ -22,8 +22,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,19 +35,35 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.akshaglobal.smartcallshield.R
 import com.akshaglobal.smartcallshield.data.model.CallMode
+import com.akshaglobal.smartcallshield.presentation.viewmodel.CallModesViewModel
 import com.akshaglobal.smartcallshield.presentation.viewmodel.DashboardViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.akshaglobal.smartcallshield.SmartCallShieldApp
 
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
+fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesViewModel: CallModesViewModel = hiltViewModel()) {
     val currentMode by viewModel.currentMode.collectAsState()
-    val isAppEnabled by viewModel.isAppEnabled.collectAsState()
     val isPremium by viewModel.isPremium.collectAsState()
     val blockedCount by viewModel.blockedCount.collectAsState()
     val spamCount by viewModel.spamCount.collectAsState()
     val drivingReplies by viewModel.drivingRepliesCount.collectAsState()
+    val modes by callModesViewModel.modes.collectAsState()
+    val enabledModes by callModesViewModel.enabledModes.collectAsState()
+    var showModeErrorDialog by remember { mutableStateOf<String?>(null) }
+    var showEnableDialog by remember { mutableStateOf(false) }
+    var showWarningDialog by remember { mutableStateOf(false) }
+    var showDisableDialog by remember { mutableStateOf(false) }
+    var showModeChangeDialog by remember { mutableStateOf(false) }
+    var pendingMode: CallMode? by remember { mutableStateOf(null) }
+    val isAppEnabled by viewModel.isAppEnabled.collectAsState()
+    val deviceContacts by callModesViewModel.deviceContacts.collectAsState()
+
+    // Always reload modes and contacts from the database when DashboardScreen is recomposed
+    LaunchedEffect(modes, deviceContacts) {
+        callModesViewModel.syncModesAndContacts()
+    }
 
     Column(
         modifier = Modifier
@@ -64,9 +84,104 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
+            // Enable switch if any mode has contacts (enabledModes contains true)
+            val canEnableSwitch = enabledModes.values.any { it }
             Switch(
                 checked = isAppEnabled,
-                onCheckedChange = { viewModel.toggleAppEnabled() }
+                onCheckedChange = { checked ->
+                    if (checked) {
+                        showWarningDialog = true
+                    } else {
+                        showDisableDialog = true
+                    }
+                },
+                enabled = canEnableSwitch || isAppEnabled // Allow disabling even if no mode is present
+            )
+        }
+        if (showWarningDialog) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Enable CallShield") },
+                text = {
+                    Text("You are altering your phone's default call receiving behavior, which may alter your incoming calls by blocking spam, automated, and unknown calls. Press OK to enable CallShield. Normal mode will be set by default.")
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.toggleAppEnabled()
+                        viewModel.setMode(CallMode.NORMAL)
+                        showWarningDialog = false
+                        SmartCallShieldApp.isCallShieldEnabled=true
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        showWarningDialog = false
+                        SmartCallShieldApp.isCallShieldEnabled=false
+                    }) { Text("Cancel") }
+                },
+                modifier = Modifier.fillMaxWidth(0.95f)
+            )
+        }
+        if (showDisableDialog) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Disable CallShield") },
+                text = {
+                    Text("You are disabling the switch. Your phone will receive ALL CALLS WITHOUT ANY CALL FILTERING, including unknown calls. Press OK to disable CallShield.")
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.toggleAppEnabled()
+                        showDisableDialog = false
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        showDisableDialog = false
+                    }) { Text("Cancel") }
+                },
+                modifier = Modifier.fillMaxWidth(0.95f)
+            )
+        }
+        if (showEnableDialog) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Enable CallShield") },
+                text = {
+                    Text("To Enable the CallShield, create the call modes from the settings call modes management and then select the call modes first. Then you can enable the CallShield.")
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        showEnableDialog = false
+                    }) {
+                        Text("Close")
+                    }
+                },
+                dismissButton = {},
+                modifier = Modifier.fillMaxWidth(0.95f)
+            )
+        }
+        if (showModeChangeDialog && pendingMode != null) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Change Call Mode") },
+                text = {
+                    Text("CallShield will be applied to the selected mode. Press OK to switch mode.")
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        viewModel.setMode(pendingMode!!)
+                        showModeChangeDialog = false
+                        pendingMode = null
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    Button(onClick = {
+                        showModeChangeDialog = false
+                        pendingMode = null
+                    }) { Text("Cancel") }
+                },
+                modifier = Modifier.fillMaxWidth(0.95f)
             )
         }
 
@@ -98,8 +213,48 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
-        ModeSelector(currentMode) { newMode ->
-            viewModel.setMode(newMode)
+        val modeSelectorEnabled = modes.isNotEmpty()
+        // Only use enabledModes for selector logic
+        ModeSelector(
+            currentMode,
+            enabled = modeSelectorEnabled,
+            normalEnabled = enabledModes["NORMAL"] == true,
+            familyEnabled = enabledModes["FAMILY"] == true,
+            drivingEnabled = enabledModes["DRIVING"] == true,
+            emergencyEnabled = enabledModes["EMERGENCY"] == true
+        ) { newMode ->
+            val modeName = when (newMode) {
+                CallMode.FAMILY -> "FAMILY"
+                CallMode.DRIVING -> "DRIVING"
+                CallMode.EMERGENCY -> "EMERGENCY"
+                else -> "NORMAL"
+            }
+            val modeEntity = modes.find { it.name.equals(modeName, ignoreCase = true) }
+            val hasContacts = enabledModes[modeName] == true
+            if (modeEntity == null) {
+                showModeErrorDialog = "No $modeName mode found. Please create it in Call Modes Management."
+                return@ModeSelector
+            }
+            if (!hasContacts) {
+                showModeErrorDialog = "$modeName mode has no contacts. Please add contacts to this mode."
+            } else if (newMode != CallMode.NORMAL) {
+                pendingMode = newMode
+                showModeChangeDialog = true
+            } else {
+                viewModel.setMode(newMode)
+            }
+        }
+        if (showModeErrorDialog != null) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showModeErrorDialog = null },
+                title = { Text("Mode Selection Error") },
+                text = { Text(showModeErrorDialog ?: "") },
+                confirmButton = {
+                    Button(onClick = { showModeErrorDialog = null }) { Text("Close") }
+                },
+                dismissButton = {},
+                modifier = Modifier.fillMaxWidth(0.95f)
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -136,11 +291,22 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
             icon = R.drawable.ic_launcher_foreground,
             backgroundColor = Color(0xFFE3F2FD)
         )
+
+        // Debug printout for enabledModes
+        println("[DEBUG] enabledModes: $enabledModes")
     }
 }
 
 @Composable
-private fun ModeSelector(currentMode: CallMode, onModeSelected: (CallMode) -> Unit) {
+private fun ModeSelector(
+    currentMode: CallMode?,
+    enabled: Boolean,
+    normalEnabled: Boolean = false,
+    familyEnabled: Boolean = false,
+    drivingEnabled: Boolean = false,
+    emergencyEnabled: Boolean = false,
+    onModeSelected: (CallMode) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -151,24 +317,28 @@ private fun ModeSelector(currentMode: CallMode, onModeSelected: (CallMode) -> Un
             label = "Normal",
             iconRes = R.drawable.ic_mode_normal,
             isSelected = currentMode == CallMode.NORMAL,
+            enabled = enabled && normalEnabled,
             onClick = { onModeSelected(CallMode.NORMAL) }
         )
         ModeButton(
             label = "Family",
             iconRes = R.drawable.ic_mode_family,
             isSelected = currentMode == CallMode.FAMILY,
+            enabled = enabled && familyEnabled,
             onClick = { onModeSelected(CallMode.FAMILY) }
         )
         ModeButton(
             label = "Driving",
             iconRes = R.drawable.ic_mode_driving,
             isSelected = currentMode == CallMode.DRIVING,
+            enabled = enabled && drivingEnabled,
             onClick = { onModeSelected(CallMode.DRIVING) }
         )
         ModeButton(
             label = "Emergency",
             iconRes = R.drawable.ic_mode_emergency,
             isSelected = currentMode == CallMode.EMERGENCY,
+            enabled = enabled && emergencyEnabled,
             onClick = { onModeSelected(CallMode.EMERGENCY) }
         )
     }
@@ -179,10 +349,12 @@ private fun ModeButton(
     label: String,
     iconRes: Int,
     isSelected: Boolean,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier
             .width(85.dp)
             .height(85.dp)
@@ -202,7 +374,7 @@ private fun ModeButton(
                 modifier = Modifier
                     .width(36.dp)
                     .height(36.dp),
-                tint = if (isSelected) Color.Unspecified else Color.White
+                tint = if (isSelected && enabled) Color.Unspecified else Color.White
             )
         }
     }

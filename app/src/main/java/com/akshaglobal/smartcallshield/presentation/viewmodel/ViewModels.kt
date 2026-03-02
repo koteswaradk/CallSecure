@@ -179,7 +179,8 @@ class ContactsViewModel @Inject constructor(
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val contactRepository: ContactRepository
 ) : ViewModel() {
 
     private val _spamDetectionEnabled = MutableStateFlow(true)
@@ -197,18 +198,37 @@ class SettingsViewModel @Inject constructor(
     private val _autoRejectSpam = MutableStateFlow(true)
     val autoRejectSpam = _autoRejectSpam.asStateFlow()
 
+    private val _hasDrivingContacts = MutableStateFlow(false)
+    val hasDrivingContacts = _hasDrivingContacts.asStateFlow()
+
     init {
+        viewModelScope.launch {
+            contactRepository.getContactsByCategory("DRIVING").collect { contacts ->
+                _hasDrivingContacts.value = contacts.isNotEmpty()
+                // Only allow enabling driving mode if there are driving contacts
+                if (!contacts.isNotEmpty()) {
+                    _drivingModeEnabled.value = false
+                    preferencesManager.setDrivingModeEnabled(false)
+                }
+            }
+        }
+        viewModelScope.launch {
+            preferencesManager.drivingModeEnabled.collect { enabled ->
+                // Only allow enabling if there are driving contacts
+                _drivingModeEnabled.value = enabled && _hasDrivingContacts.value
+            }
+        }
         viewModelScope.launch {
             preferencesManager.spamDetectionEnabled.collect {
                 _spamDetectionEnabled.value = it
             }
         }
 
-        viewModelScope.launch {
+       /* viewModelScope.launch {
             preferencesManager.drivingModeEnabled.collect {
                 _drivingModeEnabled.value = it
             }
-        }
+        }*/
 
         viewModelScope.launch {
             preferencesManager.drivingModeAutoReply.collect {

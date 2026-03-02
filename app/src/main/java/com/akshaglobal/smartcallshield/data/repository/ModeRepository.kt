@@ -3,6 +3,7 @@ package com.akshaglobal.smartcallshield.data.repository
 import com.akshaglobal.smartcallshield.data.dao.ModeDao
 import com.akshaglobal.smartcallshield.data.dao.ContactDao
 import com.akshaglobal.smartcallshield.data.model.ModeEntity
+import com.akshaglobal.smartcallshield.data.model.ModeWithContacts
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -38,5 +39,10 @@ class ModeRepository @Inject constructor(
             else -> true
         }
     }
-}
 
+    suspend fun getModeWithContacts(modeId: Long): ModeWithContacts? {
+        return modeDao.getModeWithContacts(modeId).first()
+    }
+
+    fun getAllModes(): Flow<List<ModeEntity>> = modeDao.getAllModes()
+}

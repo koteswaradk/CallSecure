@@ -8,23 +8,32 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,20 +49,23 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.akshaglobal.smartcallshield.presentation.viewmodel.SettingsViewModel
+import com.akshaglobal.smartcallshield.presentation.viewmodel.CallModesViewModel
+import com.google.accompanist.permissions.isGranted
+import java.util.Locale
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateToCallModes: () -> Unit = {}
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
+
+    val showDrivingAlert = remember { mutableStateOf(false) }
+    val showNoContactsAlert = remember { mutableStateOf(false) }
     val spamDetectionEnabled by viewModel.spamDetectionEnabled.collectAsState()
     val drivingModeEnabled by viewModel.drivingModeEnabled.collectAsState()
     val drivingModeAutoReply by viewModel.drivingModeAutoReply.collectAsState()
     val spamConfidenceThreshold by viewModel.spamConfidenceThreshold.collectAsState()
     val autoRejectSpam by viewModel.autoRejectSpam.collectAsState()
-
-    val contactsPermissionState = rememberPermissionState(Manifest.permission.READ_CONTACTS)
 
     Column(
         modifier = Modifier
@@ -91,7 +103,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Confidence Threshold: ${String.format("%.1f", spamConfidenceThreshold * 100)}%",
+            "Confidence Threshold: ${String.format(Locale.getDefault(), "%.1f", spamConfidenceThreshold * 100)}%",
             modifier = Modifier.padding(8.dp)
         )
         Slider(
@@ -130,19 +142,15 @@ fun SettingsScreen(
                 .height(100.dp)
                 .padding(8.dp),
             label = { Text("Reply message") },
-            maxLines = 5
+            maxLines = 5,
+            enabled = !drivingModeEnabled // Disable when driving mode is enabled
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Call Modes Management Section
         SettingsSectionHeader("Call Modes Management")
-        CallModeManagementCard(
-            onNavigate = {
-                // Just navigate - permission will be handled in CallModesManagementScreen
-                onNavigateToCallModes()
-            }
-        )
+        CallModeManagementCard()
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -215,9 +223,9 @@ private fun SettingCard(
 }
 
 @Composable
-private fun CallModeManagementCard(
-    onNavigate: () -> Unit
-) {
+private fun CallModeManagementCard() {
+    var showModeDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -236,15 +244,205 @@ private fun CallModeManagementCard(
                 Text("Setup Normal, Family, Driving, Emergency modes", fontSize = 12.sp, color = Color.Gray)
             }
             Button(
-                onClick = onNavigate,
+                onClick = { showModeDialog = true },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Text("Setup", fontSize = 12.sp)
                 Spacer(modifier = Modifier.width(4.dp))
-                Icon(Icons.Default.ArrowForward, contentDescription = "Setup modes")
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Setup modes")
             }
         }
     }
+
+    if (showModeDialog) {
+        CreateModeAlertDialog(
+            onDismiss = { showModeDialog = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun CreateModeAlertDialog(
+    onDismiss: () -> Unit,
+    callModesViewModel: CallModesViewModel = hiltViewModel()
+) {
+    val deviceContacts by callModesViewModel.deviceContacts.collectAsState()
+    val contactsPermissionState = rememberPermissionState(Manifest.permission.READ_CONTACTS)
+
+    var selectedMode by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedContacts by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var showModeDropdown by remember { mutableStateOf(false) }
+
+    val predefinedModes = listOf("Normal", "Family", "Driving", "Emergency")
+
+    // Request permission and load contacts on first load
+    LaunchedEffect(Unit) {
+        if (!contactsPermissionState.status.isGranted) {
+            contactsPermissionState.launchPermissionRequest()
+        } else {
+            callModesViewModel.loadDeviceContacts()
+        }
+    }
+
+    // Reload contacts when permission is granted
+    LaunchedEffect(contactsPermissionState.status.isGranted) {
+        if (contactsPermissionState.status.isGranted) {
+            callModesViewModel.loadDeviceContacts()
+        }
+    }
+
+    // Filter contacts based on search query and remove duplicates
+    val uniquePhoneNumbers = remember(deviceContacts) {
+        deviceContacts.distinctBy { it.phoneNumber }
+    }
+
+    val filteredContacts = remember(uniquePhoneNumbers, searchQuery) {
+        if (searchQuery.isBlank()) {
+            uniquePhoneNumbers
+        } else {
+            uniquePhoneNumbers.filter {
+                it.displayName.contains(searchQuery, ignoreCase = true) ||
+                        it.phoneNumber.contains(searchQuery)
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Create & Manage Call Modes", fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Mode Selection Dropdown
+                Text(
+                    "Select Call Mode",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                OutlinedButton(
+                    onClick = { showModeDropdown = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Text(selectedMode ?: "Choose a mode", modifier = Modifier.weight(1f))
+                    Text("▼", fontSize = 12.sp)
+                }
+
+                DropdownMenu(
+                    expanded = showModeDropdown,
+                    onDismissRequest = { showModeDropdown = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    predefinedModes.forEach { mode ->
+                        DropdownMenuItem(
+                            text = { Text(mode) },
+                            onClick = {
+                                selectedMode = mode
+                                showModeDropdown = false
+                            }
+                        )
+                    }
+                }
+
+                // Search Bar
+                if (selectedMode != null) {
+                    Text(
+                        "Search Contacts",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
+                    )
+
+                    TextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Search by name or number") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        singleLine = true
+                    )
+
+                    // Contacts List
+                    Text(
+                        "Select Contacts (${selectedContacts.size} selected)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 300.dp)
+                    ) {
+                        items(filteredContacts) { contact ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        contact.displayName,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        contact.phoneNumber,
+                                        fontSize = 12.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                                Checkbox(
+                                    checked = selectedContacts.contains(contact.phoneNumber),
+                                    onCheckedChange = { isSelected ->
+                                        selectedContacts = if (isSelected) {
+                                            selectedContacts + contact.phoneNumber
+                                        } else {
+                                            selectedContacts - contact.phoneNumber
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (selectedMode != null && selectedContacts.isNotEmpty()) {
+                        callModesViewModel.createMode(selectedMode!!, selectedContacts)
+                        onDismiss()
+                    }
+                },
+                enabled = selectedMode != null && selectedContacts.isNotEmpty()
+            ) {
+                Text("Create Mode")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth(0.95f)
+    )
 }
