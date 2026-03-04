@@ -44,7 +44,10 @@ class HandleCallUseCaseTest {
         val modeRepo = mockk<com.akshaglobal.smartcallshield.data.repository.ModeRepository>()
         coEvery { modeRepo.isPhoneAllowedInActiveMode(any()) } returns true
 
-        val handle = HandleCallUseCase(detectUseCase, callLogRepo, contactRepo, prefs, modeRepo)
+        // Add a mock DeviceContactsProvider
+        val deviceContactsProvider = mockk<com.akshaglobal.smartcallshield.data.contacts.DeviceContactsProvider>(relaxed = true)
+
+        val handle = HandleCallUseCase(detectUseCase, callLogRepo, contactRepo, prefs, modeRepo, deviceContactsProvider)
 
         val decision = handle.invoke("+123")
         assertEquals(CallDecision.REJECT, decision)

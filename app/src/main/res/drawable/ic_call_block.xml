@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Phone Handset -->
+    <path android:fillColor="#1976D2" android:pathData="M6.62,10.79C7.06,9.19,8.19,7.81,9.79,7.37l1.06,1.06c-1.02,0.23-1.84,1.05-2.07,2.07l-1.06-1.06zM15.73,3.73l4.24,4.24c0.39,0.39,0.39,1.02,0,1.41l-1.41,1.41c-0.39,0.39-1.02,0.39-1.41,0l-4.24-4.24c-0.39-0.39-0.39-1.02,0-1.41l1.41-1.41C14.71,3.34,15.34,3.34,15.73,3.73z"/>
+    <!-- Block (No) Symbol -->
+    <path android:fillColor="#F44336" android:pathData="M19,12c0,3.87-3.13,7-7,7s-7-3.13-7-7,3.13-7,7-7,7,3.13,7,7zm-2,0c0-2.76-2.24-5-5-5-1.1,0-2.1,0.36-2.9,0.97l6.93,6.93C16.64,14.1,17,13.1,17,12zm-10,0c0,2.76,2.24,5,5,5,1.1,0,2.1-0.36,2.9-0.97l-6.93-6.93C7.36,9.9,7,10.9,7,12z"/>
+</vector>

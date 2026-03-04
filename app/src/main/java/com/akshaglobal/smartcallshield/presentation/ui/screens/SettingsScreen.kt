@@ -58,13 +58,23 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    isAppEnabled: Boolean // <-- Add this parameter
+    isAppEnabled: Boolean? // Accept nullable for loading state
 ) {
     val spamDetectionEnabled by viewModel.spamDetectionEnabled.collectAsState()
     val drivingModeEnabled by viewModel.drivingModeEnabled.collectAsState()
     val drivingModeAutoReply by viewModel.drivingModeAutoReply.collectAsState()
     val spamConfidenceThreshold by viewModel.spamConfidenceThreshold.collectAsState()
     val autoRejectSpam by viewModel.autoRejectSpam.collectAsState()
+
+    if (isAppEnabled == null) {
+        // Show loading indicator while state is loading
+        androidx.compose.material3.CircularProgressIndicator(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 64.dp)
+        )
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -80,17 +90,6 @@ fun SettingsScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-
-        // Synchronize spam detection and auto-reject spam with app switch
-        LaunchedEffect(isAppEnabled) {
-            if (isAppEnabled) {
-                if (!spamDetectionEnabled) viewModel.setSpamDetectionEnabled(true)
-                if (!autoRejectSpam) viewModel.setAutoRejectSpam(true)
-            } else {
-                if (spamDetectionEnabled) viewModel.setSpamDetectionEnabled(false)
-                if (autoRejectSpam) viewModel.setAutoRejectSpam(false)
-            }
-        }
 
         // Spam Detection Section
         SettingsSectionHeader("Spam Detection")

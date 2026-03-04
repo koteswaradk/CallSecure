@@ -18,6 +18,7 @@ import com.akshaglobal.smartcallshield.di.CallInterceptorEntryPoint
 import com.akshaglobal.smartcallshield.util.PhoneNumberUtils
 import com.akshaglobal.smartcallshield.utils.SmsSender
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
+import com.akshaglobal.smartcallshield.data.contacts.DeviceContactsProvider
 
 class CallInterceptor : BroadcastReceiver() {
 
@@ -25,6 +26,7 @@ class CallInterceptor : BroadcastReceiver() {
     private lateinit var callLogRepository: CallLogRepository
     private lateinit var smsSender: SmsSender
     private lateinit var preferencesManager: PreferencesManager
+    private lateinit var deviceContactsProvider: DeviceContactsProvider
 
     private var ringStartTime: Long = 0
     private var ringCount: Int = 0
@@ -38,6 +40,7 @@ class CallInterceptor : BroadcastReceiver() {
         callLogRepository = entryPoint.callLogRepository()
         smsSender = entryPoint.smsSender()
         preferencesManager = entryPoint.preferencesManager()
+        deviceContactsProvider = entryPoint.deviceContactsProvider()
 
         when (intent.action) {
             TelephonyManager.ACTION_PHONE_STATE_CHANGED -> {

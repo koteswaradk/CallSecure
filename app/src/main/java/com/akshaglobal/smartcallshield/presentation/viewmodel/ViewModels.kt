@@ -28,7 +28,7 @@ class DashboardViewModel @Inject constructor(
     private val getAnalyticsUseCase: GetAnalyticsUseCase
 ) : ViewModel() {
 
-    private val _currentMode = MutableStateFlow<CallMode>(CallMode.NORMAL)
+    private val _currentMode = MutableStateFlow<CallMode?>(null)
     val currentMode = _currentMode.asStateFlow()
 
     private val _isAppEnabled = MutableStateFlow(true)
@@ -49,11 +49,18 @@ class DashboardViewModel @Inject constructor(
     private val _drivingRepliesCount = MutableStateFlow(0L)
     val drivingRepliesCount = _drivingRepliesCount.asStateFlow()
 
+    private val _drivingModeEnabled = MutableStateFlow(false)
+    val drivingModeEnabled = _drivingModeEnabled.asStateFlow()
+
     init {
         viewModelScope.launch {
             // Observe mode changes
             preferencesManager.currentMode.collect { mode ->
-                _currentMode.value = CallMode.valueOf(mode)
+                _currentMode.value = try {
+                    CallMode.valueOf(mode)
+                } catch (e: Exception) {
+                    CallMode.NORMAL
+                }
             }
         }
 
@@ -108,6 +115,14 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.setCurrentMode(mode.name)
             _currentMode.value = mode
+            // Enable driving mode in preferences if DRIVING is selected, disable otherwise
+            if (mode == CallMode.DRIVING) {
+                preferencesManager.setDrivingModeEnabled(true)
+                _drivingModeEnabled.value = true
+            } else {
+                preferencesManager.setDrivingModeEnabled(false)
+                _drivingModeEnabled.value = false
+            }
         }
     }
 
@@ -319,4 +334,3 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 }
-

@@ -9,6 +9,7 @@ import com.akshaglobal.smartcallshield.data.repository.SpamReportRepository
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
 import com.akshaglobal.smartcallshield.data.repository.ModeRepository
+import com.akshaglobal.smartcallshield.data.contacts.DeviceContactsProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -124,17 +125,56 @@ class HandleCallUseCase @Inject constructor(
     private val callLogRepository: CallLogRepository,
     private val contactRepository: ContactRepository,
     private val preferencesManager: PreferencesManager,
-    private val modeRepository: ModeRepository
+    private val modeRepository: ModeRepository,
+    private val deviceContactsProvider: DeviceContactsProvider // <-- Injected
 ) {
     suspend operator fun invoke(phoneNumber: String): CallDecision {
-        // First check active mode permissions
-        val allowedByMode = modeRepository.isPhoneAllowedInActiveMode(phoneNumber)
-        if (!allowedByMode) return CallDecision.REJECT
+        val currentMode = preferencesManager.currentMode.first().uppercase()
+        val normalizedNumber = phoneNumber.replace(Regex("[^+0-9]"), "")
 
-        // Get spam detection result
+        // Debug logging
+        println("[DEBUG] Current mode: $currentMode, Incoming: $normalizedNumber")
+
+        // 1. Check if allowed by mode
+        val allowedByMode = when (currentMode) {
+            "NORMAL" -> {
+                val deviceContacts = deviceContactsProvider.fetchDeviceContacts()
+                val allowed = deviceContacts.any { it.phoneNumber.replace(Regex("[^+0-9]"), "") == normalizedNumber }
+                println("[DEBUG] Allowed by NORMAL: $allowed")
+                allowed
+            }
+            "FAMILY", "DRIVING", "EMERGENCY" -> {
+                val activeMode = modeRepository.getActiveMode().first()
+                if (activeMode == null) {
+                    println("[DEBUG] No active mode found!")
+                    false
+                } else {
+                    val modeWithContacts = modeRepository.getModeWithContacts(activeMode.id)
+                    val contacts = modeWithContacts?.contacts ?: emptyList()
+                    println("[DEBUG] Mode contacts: ${contacts.map { c -> "${c.displayName} (${c.phoneNumber}) [${c.category}]" }}")
+                    if (contacts.isEmpty()) println("[DEBUG] No contacts assigned to mode ${activeMode.name}")
+                    val filteredContacts = contacts.filter { it.category.equals(currentMode, ignoreCase = true) }
+                    println("[DEBUG] Filtered contacts for $currentMode: ${filteredContacts.map { c -> "${c.displayName} (${c.phoneNumber})" }}")
+                    val allowed = filteredContacts.any { c ->
+                        val contactNormalized = c.phoneNumber.replace(Regex("[^+0-9]"), "")
+                        println("[DEBUG] Comparing incoming $normalizedNumber to contact ${c.phoneNumber} (normalized: $contactNormalized)")
+                        contactNormalized == normalizedNumber
+                    }
+                    println("[DEBUG] Allowed by $currentMode: $allowed")
+                    allowed
+                }
+            }
+            else -> true
+        }
+        if (!allowedByMode) {
+            println("[DEBUG] Call REJECTED by mode filter.")
+            return CallDecision.REJECT
+        }
+
+        // 2. Get spam detection result
         val spamResult = detectSpamUseCase(phoneNumber)
 
-        // Check auto-reject spam setting
+        // 3. Check auto-reject spam/unknown settings
         val autoRejectSpam = preferencesManager.autoRejectSpam.first()
         val autoRejectUnknown = preferencesManager.autoRejectUnknown.first()
 

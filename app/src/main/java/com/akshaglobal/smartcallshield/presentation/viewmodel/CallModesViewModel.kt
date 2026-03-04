@@ -39,6 +39,9 @@ class CallModesViewModel @Inject constructor(
     private val _toastEvent = MutableSharedFlow<String>()
     val toastEvent: SharedFlow<String> = _toastEvent
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
     init {
         loadModes()
         // Observe contacts table and update enabledModes on any change
@@ -51,8 +54,14 @@ class CallModesViewModel @Inject constructor(
 
     fun loadDeviceContacts() {
         viewModelScope.launch {
-            val contacts = deviceContactsProvider.fetchDeviceContacts()
-            _deviceContacts.value = contacts
+            try {
+                val contacts = deviceContactsProvider.fetchDeviceContacts()
+                _deviceContacts.value = contacts
+            } catch (e: SecurityException) {
+                // Notify UI to show permission request or error message
+                _deviceContacts.value = emptyList()
+                _errorMessage.value = "Permission to read contacts is required. Please grant access in settings."
+            }
         }
     }
 
@@ -188,6 +197,7 @@ class CallModesViewModel @Inject constructor(
     fun setActiveMode(modeId: Long) {
         viewModelScope.launch {
             modeRepository.setActiveMode(modeId)
+            loadModes() // Refresh modes state after changing active mode
         }
     }
 
@@ -253,5 +263,29 @@ class CallModesViewModel @Inject constructor(
             ensureContactsAssociatedWithMode(mode.name)
         }
         refreshEnabledModes()
+    }
+
+    /**
+     * Create the mode if it does not exist, and set it as active (deactivate others)
+     */
+    fun createOrActivateMode(name: String) {
+        viewModelScope.launch {
+            // Check if mode exists
+            val existing = _modes.value.find { it.name.equals(name, ignoreCase = true) }
+            if (existing == null) {
+                // Create the mode (no contacts by default)
+                createMode(name)
+                // Wait for mode to be created and loaded
+                loadModes()
+                val newMode = _modes.value.find { it.name.equals(name, ignoreCase = true) }
+                if (newMode != null) {
+                    modeRepository.setActiveMode(newMode.id)
+                }
+            } else {
+                modeRepository.setActiveMode(existing.id)
+            }
+            // Refresh modes state
+            loadModes()
+        }
     }
 }

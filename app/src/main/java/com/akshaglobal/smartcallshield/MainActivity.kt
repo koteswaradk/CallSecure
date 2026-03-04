@@ -1,6 +1,7 @@
 package com.akshaglobal.smartcallshield
 
 import android.Manifest
+import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -69,6 +70,15 @@ class MainActivity : ComponentActivity() {
         // Request permissions
         permissionLauncher.launch(requiredPermissions)
 
+        // Request call screening role if needed (Android 10+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
+            if (!roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
+                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+                startActivity(intent)
+            }
+        }
+
         setContent {
             SmartCallShieldTheme {
                 Surface(
@@ -109,4 +119,3 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "MainActivity"
     }
 }
-

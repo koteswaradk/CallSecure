@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Phone Handset -->
+    <path android:fillColor="#1976D2" android:pathData="M6.62,10.79C7.06,9.19,8.19,7.81,9.79,7.37l1.06,1.06c-1.02,0.23-1.84,1.05-2.07,2.07l-1.06-1.06zM15.73,3.73l4.24,4.24c0.39,0.39,0.39,1.02,0,1.41l-1.41,1.41c-0.39,0.39-1.02,0.39-1.41,0l-4.24-4.24c-0.39-0.39-0.39-1.02,0-1.41l1.41-1.41C14.71,3.34,15.34,3.34,15.73,3.73z"/>
+    <!-- Spam Triangle -->
+    <path android:fillColor="#FF9800" android:pathData="M12,4L2,20h20L12,4z"/>
+    <!-- Exclamation Mark -->
+    <path android:fillColor="#FFFFFF" android:pathData="M13,16h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+</vector>

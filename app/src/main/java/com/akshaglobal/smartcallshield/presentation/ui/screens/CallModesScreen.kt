@@ -2,6 +2,7 @@ package com.akshaglobal.smartcallshield.presentation.ui.screens
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -11,12 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import com.akshaglobal.smartcallshield.presentation.viewmodel.CallModesViewModel
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun CallModesScreen(viewModel: CallModesViewModel) {
     val contactsState = viewModel.deviceContacts.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().sizeIn(minWidth = 1.dp, minHeight = 1.dp)) {
         Text("Call Modes", style = MaterialTheme.typography.titleLarge)
 
         Button(onClick = { viewModel.createMode("FAMILY") }) {

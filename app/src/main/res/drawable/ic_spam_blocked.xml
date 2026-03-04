@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Red hexagon -->
+    <path android:fillColor="#F44336" android:pathData="M24,6l16,6v12l-16,6-16-6V12z"/>
+    <!-- White exclamation mark -->
+    <path android:fillColor="#FFFFFF" android:pathData="M22,16h4v12h-4zM22,32h4v4h-4z"/>
+</vector>
+

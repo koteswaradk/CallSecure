@@ -66,8 +66,7 @@ class PreferencesManager(private val context: Context) {
     }
 
     // App Enabled
-    val isAppEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[IS_APP_ENABLED] ?: true
+    val isAppEnabled: Flow<Boolean> = context.dataStore.data.map { preferences -> preferences[IS_APP_ENABLED] ?: false // Default to false on first launch
     }
 
     suspend fun setAppEnabled(enabled: Boolean) {
