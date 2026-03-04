@@ -70,6 +70,9 @@ interface CallLogDao {
 
     @Query("SELECT * FROM call_logs WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp DESC")
     fun getCallLogsBetween(startTime: Long, endTime: Long): Flow<List<CallLogEntity>>
+
+    @Query("SELECT * FROM call_logs ORDER BY timestamp ASC")
+    fun getAllCallLogs(): Flow<List<CallLogEntity>>
 }
 
 @Dao
@@ -113,4 +116,3 @@ interface DrivingModeLogDao {
     @Query("DELETE FROM driving_mode_logs WHERE timestamp < :beforeTimestamp")
     suspend fun deleteOldDrivingModeLogs(beforeTimestamp: Long)
 }
-

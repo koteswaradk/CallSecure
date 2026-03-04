@@ -1,22 +1,16 @@
 package com.akshaglobal.smartcallshield.service
 
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.telephony.SmsManager
+import android.telephony.SubscriptionManager
 import android.util.Log
+import androidx.core.content.getSystemService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.first
-import com.akshaglobal.smartcallshield.data.repository.DrivingModeLogRepository
-import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 
 class SmsHandler : BroadcastReceiver() {
-
-    var drivingModeRepository: DrivingModeLogRepository? = null
-    var preferencesManager: PreferencesManager? = null
 
     override fun onReceive(context: Context?, intent: Intent?) {
         // Placeholder: actual implementation will send SMS when triggered by driving mode
@@ -26,10 +20,17 @@ class SmsHandler : BroadcastReceiver() {
         Log.d(TAG, "Received SMS handler action: $action")
     }
 
-    suspend fun sendAutoReplySms(context: Context, phoneNumber: String, message: String) {
+    fun sendAutoReplySms(context: Context, phoneNumber: String, message: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val smsManager = android.telephony.SmsManager.getDefault()
+                val subscriptionManager = context.getSystemService(SubscriptionManager::class.java)
+                val subId = try {
+                    if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_PHONE_STATE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        subscriptionManager.activeSubscriptionInfoList?.firstOrNull()?.subscriptionId
+                    } else null
+                } catch (e: SecurityException) { null }
+                @Suppress("DEPRECATION")
+                val smsManager = if (subId != null) android.telephony.SmsManager.getSmsManagerForSubscriptionId(subId) else android.telephony.SmsManager.getDefault()
                 val parts = smsManager.divideMessage(message)
                 smsManager.sendMultipartTextMessage(phoneNumber, null, parts, null, null)
                 Log.d(TAG, "Auto-reply sent to $phoneNumber")

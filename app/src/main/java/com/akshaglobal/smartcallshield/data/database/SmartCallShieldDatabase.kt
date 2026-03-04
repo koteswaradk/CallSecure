@@ -70,7 +70,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         ModeContactCrossRef::class
     ],
     version = 2,
-    exportSchema = true
+    exportSchema = false
 )
 abstract class SmartCallShieldDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao

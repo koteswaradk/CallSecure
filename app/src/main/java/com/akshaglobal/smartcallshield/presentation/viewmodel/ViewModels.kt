@@ -20,6 +20,10 @@ import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
 import com.akshaglobal.smartcallshield.data.repository.ContactRepository
 import com.akshaglobal.smartcallshield.domain.usecase.GetAnalyticsUseCase
 import com.akshaglobal.smartcallshield.domain.usecase.ManageContactsUseCase
+import com.akshaglobal.smartcallshield.domain.usecase.GetCallHistoryUseCase
+import com.akshaglobal.smartcallshield.data.model.CallType
+
+enum class TrendFilter { TODAY, WEEK, MONTH, OVERALL }
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -302,7 +306,8 @@ class SettingsViewModel @Inject constructor(
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
-    private val getAnalyticsUseCase: GetAnalyticsUseCase
+    private val getAnalyticsUseCase: GetAnalyticsUseCase,
+    private val getCallHistoryUseCase: GetCallHistoryUseCase
 ) : ViewModel() {
 
     private val _blockedCalls = MutableStateFlow(0L)
@@ -314,23 +319,136 @@ class AnalyticsViewModel @Inject constructor(
     private val _drivingRepliesSent = MutableStateFlow(0L)
     val drivingRepliesSent = _drivingRepliesSent.asStateFlow()
 
+    // --- Call Trends State ---
+    private val _callTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
+    val callTrends = _callTrends.asStateFlow()
+
+    // --- New: Filter state and statistics ---
+    private val _trendFilter = MutableStateFlow(TrendFilter.TODAY)
+    val trendFilter = _trendFilter.asStateFlow()
+
+    private val _totalArrivals = MutableStateFlow(0)
+    val totalArrivals = _totalArrivals.asStateFlow()
+    private val _answeredCalls = MutableStateFlow(0)
+    val answeredCalls = _answeredCalls.asStateFlow()
+    private val _blocked = MutableStateFlow(0)
+    val blocked = _blocked.asStateFlow()
+    private val _autoReply = MutableStateFlow(0)
+    val autoReply = _autoReply.asStateFlow()
+
+    fun setTrendFilter(filter: TrendFilter) {
+        _trendFilter.value = filter
+        updateTrends()
+    }
+
     init {
         viewModelScope.launch {
             getAnalyticsUseCase.getBlockedCallsCount().collect {
                 _blockedCalls.value = it
             }
         }
-
         viewModelScope.launch {
             getAnalyticsUseCase.getSpamCallsCount().collect {
                 _spamCallsPrevented.value = it
             }
         }
-
         viewModelScope.launch {
             getAnalyticsUseCase.getDrivingModeRepliesCount().collect {
                 _drivingRepliesSent.value = it
             }
         }
+        // Observe filter and update trends
+        viewModelScope.launch {
+            _trendFilter.collect {
+                updateTrends()
+            }
+        }
+    }
+
+    private fun updateTrends() {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val oneHour = 60 * 60 * 1000L
+            val oneDay = 24 * 60 * 60 * 1000L
+            val filter = _trendFilter.value
+            when (filter) {
+                TrendFilter.TODAY -> {
+                    val start = now - (now % oneDay)
+                    getCallHistoryUseCase.getCallsInTimeRange(start, now).collect { callLogs ->
+                        val grouped = callLogs.groupBy {
+                            java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp))
+                        }
+                        val trends = (0..23).map { h ->
+                            val hour = h.toString().padStart(2, '0')
+                            hour to (grouped[hour]?.size ?: 0)
+                        }
+                        _callTrends.value = trends
+                        updateStats(callLogs)
+                    }
+                }
+                TrendFilter.WEEK -> {
+                    val start = now - 6 * oneDay
+                    getCallHistoryUseCase.getCallsInTimeRange(start, now).collect { callLogs ->
+                        val grouped = callLogs.groupBy {
+                            java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(it.timestamp))
+                        }
+                        val trends = (0..6).map { i ->
+                            val day = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(start + i * oneDay))
+                            day to (grouped[day]?.size ?: 0)
+                        }
+                        _callTrends.value = trends
+                        updateStats(callLogs)
+                    }
+                }
+                TrendFilter.MONTH -> {
+                    val calendar = java.util.Calendar.getInstance()
+                    val daysInMonth = calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
+                    calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
+                    val start = calendar.timeInMillis
+                    getCallHistoryUseCase.getCallsInTimeRange(start, now).collect { callLogs ->
+                        val grouped = callLogs.groupBy {
+                            java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(it.timestamp))
+                        }
+                        val trends = (0 until daysInMonth).map { i ->
+                            val day = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(start + i * oneDay))
+                            day to (grouped[day]?.size ?: 0)
+                        }
+                        _callTrends.value = trends
+                        updateStats(callLogs)
+                    }
+                }
+                TrendFilter.OVERALL -> {
+                    getCallHistoryUseCase.getAllCallLogs().collect { callLogs: List<CallLogEntity> ->
+                        val grouped = callLogs.groupBy { log: CallLogEntity ->
+                            java.text.SimpleDateFormat("yyyy-MM").format(java.util.Date(log.timestamp))
+                        }
+                        val trends = grouped.entries.sortedBy { entry -> entry.key }
+                            .map { entry: Map.Entry<String, List<CallLogEntity>> ->
+                                entry.key to entry.value.size
+                            }
+                        _callTrends.value = trends
+                        updateStats(callLogs)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateStats(callLogs: List<CallLogEntity>) {
+        _totalArrivals.value = callLogs.size
+        _answeredCalls.value = callLogs.count {
+            it.callType == CallType.INCOMING.ordinal && it.duration > 0 && !it.wasBlocked
+        }
+        _blocked.value = callLogs.count { it.wasBlocked }
+        // For auto-reply, you may need to join with DrivingModeLogEntity for accuracy.
+        // Here, we count incoming calls with duration == 0, not blocked, and in driving mode as a proxy.
+        _autoReply.value = callLogs.count {
+            it.callType == CallType.INCOMING.ordinal && it.duration == 0L && !it.wasBlocked && isDrivingModeActive()
+        }
+    }
+
+    private fun isDrivingModeActive(): Boolean {
+        // TODO: Implement actual check for driving mode if needed, or pass as parameter
+        return true // Placeholder, replace with actual logic if available
     }
 }

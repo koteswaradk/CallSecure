@@ -198,6 +198,11 @@ class CallModesViewModel @Inject constructor(
         viewModelScope.launch {
             modeRepository.setActiveMode(modeId)
             loadModes() // Refresh modes state after changing active mode
+            // Ensure all contacts with the correct category are associated with the mode
+            val mode = _modes.value.find { it.id == modeId }
+            if (mode != null) {
+                ensureContactsAssociatedWithMode(mode.name)
+            }
         }
     }
 

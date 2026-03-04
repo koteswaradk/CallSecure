@@ -77,6 +77,8 @@ class CallLogRepository @Inject constructor(
 
     fun getCallLogsBetween(startTime: Long, endTime: Long): Flow<List<CallLogEntity>> =
         callLogDao.getCallLogsBetween(startTime, endTime)
+
+    fun getAllCallLogs(): Flow<List<CallLogEntity>> = callLogDao.getAllCallLogs()
 }
 
 @Singleton

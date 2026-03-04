@@ -98,6 +98,8 @@ class GetCallHistoryUseCase @Inject constructor(
     fun getCallsInTimeRange(startTime: Long, endTime: Long): Flow<List<CallLogEntity>> =
         callLogRepository.getCallLogsBetween(startTime, endTime)
 
+    fun getAllCallLogs(): Flow<List<CallLogEntity>> = callLogRepository.getAllCallLogs()
+
     suspend fun logCall(callLog: CallLogEntity) =
         callLogRepository.addCallLog(callLog)
 }
@@ -129,42 +131,58 @@ class HandleCallUseCase @Inject constructor(
     private val deviceContactsProvider: DeviceContactsProvider // <-- Injected
 ) {
     suspend operator fun invoke(phoneNumber: String): CallDecision {
+        // --- ADDED: Allow all calls if app is disabled ---
+        val appEnabled = preferencesManager.isAppEnabled.first()
+        if (!appEnabled) {
+            println("[DEBUG] App is disabled, allowing all calls.")
+            return CallDecision.ALLOW
+        }
+        // --- END ADDED ---
         val currentMode = preferencesManager.currentMode.first().uppercase()
         val normalizedNumber = phoneNumber.replace(Regex("[^+0-9]"), "")
 
-        // Debug logging
         println("[DEBUG] Current mode: $currentMode, Incoming: $normalizedNumber")
 
         // 1. Check if allowed by mode
         val allowedByMode = when (currentMode) {
             "NORMAL" -> {
-                val deviceContacts = deviceContactsProvider.fetchDeviceContacts()
-                val allowed = deviceContacts.any { it.phoneNumber.replace(Regex("[^+0-9]"), "") == normalizedNumber }
-                println("[DEBUG] Allowed by NORMAL: $allowed")
-                allowed
+                try {
+                    val deviceContacts = deviceContactsProvider.fetchDeviceContacts()
+                    println("[DEBUG] Device contacts: " + deviceContacts.map { it.phoneNumber })
+                    val allowed = deviceContacts.any {
+                        val contactNormalized = it.phoneNumber.replace(Regex("[^+0-9]"), "")
+                        println("[DEBUG] Comparing incoming $normalizedNumber to device contact ${it.phoneNumber} (normalized: $contactNormalized)")
+                        contactNormalized.endsWith(normalizedNumber) || normalizedNumber.endsWith(contactNormalized)
+                    }
+                    println("[DEBUG] Allowed by NORMAL: $allowed")
+                    allowed
+                } catch (e: Exception) {
+                    println("[ERROR] Could not load device contacts: ${e.message}")
+                    true // fallback: allow if contacts cannot be loaded
+                }
             }
-            "FAMILY", "DRIVING", "EMERGENCY" -> {
+            else -> {
                 val activeMode = modeRepository.getActiveMode().first()
                 if (activeMode == null) {
                     println("[DEBUG] No active mode found!")
-                    false
+                    true // fallback: allow if no active mode
                 } else {
                     val modeWithContacts = modeRepository.getModeWithContacts(activeMode.id)
                     val contacts = modeWithContacts?.contacts ?: emptyList()
-                    println("[DEBUG] Mode contacts: ${contacts.map { c -> "${c.displayName} (${c.phoneNumber}) [${c.category}]" }}")
-                    if (contacts.isEmpty()) println("[DEBUG] No contacts assigned to mode ${activeMode.name}")
-                    val filteredContacts = contacts.filter { it.category.equals(currentMode, ignoreCase = true) }
-                    println("[DEBUG] Filtered contacts for $currentMode: ${filteredContacts.map { c -> "${c.displayName} (${c.phoneNumber})" }}")
+                    println("[DEBUG] Active mode: ${activeMode.name} (id=${activeMode.id})")
+                    println("[DEBUG] All contacts for mode: " + contacts.map { c -> "${c.displayName} (${c.phoneNumber}) [${c.category}]" })
+                    println("[DEBUG] Incoming number (normalized): $normalizedNumber")
+                    val filteredContacts = contacts.filter { it.category.equals(activeMode.name, ignoreCase = true) }
+                    println("[DEBUG] Filtered contacts for ${activeMode.name}: " + filteredContacts.map { c -> "${c.displayName} (${c.phoneNumber})" })
                     val allowed = filteredContacts.any { c ->
                         val contactNormalized = c.phoneNumber.replace(Regex("[^+0-9]"), "")
                         println("[DEBUG] Comparing incoming $normalizedNumber to contact ${c.phoneNumber} (normalized: $contactNormalized)")
-                        contactNormalized == normalizedNumber
+                        contactNormalized.endsWith(normalizedNumber) || normalizedNumber.endsWith(contactNormalized)
                     }
                     println("[DEBUG] Allowed by $currentMode: $allowed")
                     allowed
                 }
             }
-            else -> true
         }
         if (!allowedByMode) {
             println("[DEBUG] Call REJECTED by mode filter.")

@@ -5,6 +5,7 @@ import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
 import com.akshaglobal.smartcallshield.utils.SmsSender
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 import com.akshaglobal.smartcallshield.data.contacts.DeviceContactsProvider
+import com.akshaglobal.smartcallshield.data.repository.ContactRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -17,4 +18,6 @@ interface CallInterceptorEntryPoint {
     fun smsSender(): SmsSender
     fun preferencesManager(): PreferencesManager
     fun deviceContactsProvider(): DeviceContactsProvider
+    fun contactRepository(): ContactRepository
+    fun drivingModeLogRepository(): com.akshaglobal.smartcallshield.data.repository.DrivingModeLogRepository
 }

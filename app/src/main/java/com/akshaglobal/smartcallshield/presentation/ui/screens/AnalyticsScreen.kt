@@ -1,5 +1,8 @@
 package com.akshaglobal.smartcallshield.presentation.ui.screens
 
+import android.content.Context
+import android.graphics.Color as AndroidColor
+import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,6 +34,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.akshaglobal.smartcallshield.presentation.viewmodel.AnalyticsViewModel
+import com.akshaglobal.smartcallshield.presentation.viewmodel.TrendFilter
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 fun AnalyticsScreen(viewModel: AnalyticsViewModel = hiltViewModel()) {
@@ -81,7 +92,7 @@ fun AnalyticsScreen(viewModel: AnalyticsViewModel = hiltViewModel()) {
         ) {
             when (selectedTab) {
                 0 -> OverviewTab(blockedCalls, spamCallsPrevented, drivingRepliesSent)
-                1 -> TrendsTab()
+                1 -> TrendsTab(viewModel)
                 2 -> ExportTab()
             }
         }
@@ -162,39 +173,97 @@ private fun OverviewTab(
 }
 
 @Composable
-private fun TrendsTab() {
-    Text(
-        "Call Trends",
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(bottom = 12.dp)
+private fun TrendsTab(viewModel: AnalyticsViewModel) {
+    val callTrends by viewModel.callTrends.collectAsState()
+    val trendFilter by viewModel.trendFilter.collectAsState()
+    val totalArrivals by viewModel.totalArrivals.collectAsState()
+    val answeredCalls by viewModel.answeredCalls.collectAsState()
+    val blocked by viewModel.blocked.collectAsState()
+    val autoReply by viewModel.autoReply.collectAsState()
+
+    val filters = listOf(
+        TrendFilter.TODAY to "Today",
+        TrendFilter.WEEK to "Week",
+        TrendFilter.MONTH to "Month",
+        TrendFilter.OVERALL to "Overall"
     )
 
-    Card(
+    Column {
+        Text(
+            "Call Trends",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        // Filter chips
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            filters.forEach { (filter: TrendFilter, label: String) ->
+                androidx.compose.material3.FilterChip(
+                    selected = trendFilter == filter,
+                    onClick = { viewModel.setTrendFilter(filter) },
+                    label = { Text(label) },
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        // Real-time statistics
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            StatBox("Total Arrival", totalArrivals, Modifier.weight(1f))
+            StatBox("Answered", answeredCalls, Modifier.weight(1f))
+            StatBox("Blocked", blocked, Modifier.weight(1f))
+            StatBox("Auto-Reply", autoReply, Modifier.weight(1f))
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        // Call trends graph (MPAndroidChart integration)
+        MPAndroidChartTrendsGraph(callTrends)
+    }
+}
+
+// --- MPAndroidChart Integration ---
+@Composable
+private fun MPAndroidChartTrendsGraph(callTrends: List<Pair<String, Int>>) {
+    AndroidView(
+        factory = { ctx: Context ->
+            LineChart(ctx).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    400 // px, will be scaled by Compose
+                )
+                setBackgroundColor(AndroidColor.WHITE)
+                description.isEnabled = false
+                axisRight.isEnabled = false
+                axisLeft.textColor = AndroidColor.DKGRAY
+                xAxis.position = XAxis.XAxisPosition.BOTTOM
+                xAxis.textColor = AndroidColor.DKGRAY
+                xAxis.setDrawGridLines(false)
+                legend.isEnabled = false
+            }
+        },
+        update = { chart: LineChart ->
+            val entries = callTrends.mapIndexed { idx, pair ->
+                Entry(idx.toFloat(), pair.second.toFloat())
+            }
+            val dataSet = LineDataSet(entries, "Calls").apply {
+                color = AndroidColor.parseColor("#1976D2")
+                setCircleColor(AndroidColor.parseColor("#1976D2"))
+                lineWidth = 2f
+                circleRadius = 4f
+                setDrawValues(false)
+                setDrawFilled(true)
+                fillColor = AndroidColor.parseColor("#BBDEFB")
+            }
+            chart.data = LineData(dataSet)
+            chart.xAxis.valueFormatter = IndexAxisValueFormatter(callTrends.map { it.first })
+            chart.xAxis.labelRotationAngle = -45f
+            chart.invalidate()
+        },
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                "📈 Graph visualization",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
-            Text(
-                "Real-time trend analysis",
-                fontSize = 12.sp,
-                color = Color.LightGray
-            )
-        }
-    }
+            .height(220.dp)
+            .background(Color.White)
+            .padding(8.dp)
+    )
 }
 
 @Composable
@@ -293,3 +362,24 @@ private fun InsightCard(
     }
 }
 
+// --- MPAndroidChart Integration ---
+@Composable
+private fun StatBox(label: String, value: Int, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier
+            .padding(4.dp)
+            .height(80.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(label, fontSize = 12.sp, color = Color.Gray)
+            Text(value.toString(), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}

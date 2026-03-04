@@ -15,6 +15,7 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
     <uses-permission android:name="android.permission.CALL_SCREENING" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <!-- Location for driving detection (optional) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -26,6 +27,18 @@
 
     <!-- Background execution -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- Add queries for dial/call intents for package visibility -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.CALL" />
+            <data android:scheme="tel" />
+        </intent>
+    </queries>
 
     <application
         android:name=".SmartCallShieldApp"
@@ -47,6 +60,21 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Dialer Activity -->
+        <activity
+            android:name=".presentation.ui.dialer.DialerActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SmartCallShield">
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <action android:name="android.intent.action.CALL" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tel" />
             </intent-filter>
         </activity>
 

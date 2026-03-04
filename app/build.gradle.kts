@@ -110,4 +110,12 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // Dialer and Activity Result APIs
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.activity:activity-ktx:1.8.2")
+    implementation("androidx.core:core-ktx:1.12.0")
+
+    // MPAndroidChart - Charting Library
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }

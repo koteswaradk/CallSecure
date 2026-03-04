@@ -13,7 +13,15 @@ class SmsSender @Inject constructor(@ApplicationContext private val context: Con
 
     fun sendSms(phoneNumber: String, message: String) {
         try {
-            val smsManager: SmsManager = SmsManager.getDefault()
+            @Suppress("DEPRECATION")
+            val subscriptionManager = android.telephony.SubscriptionManager.from(context)
+            val subId = try {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_PHONE_STATE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    subscriptionManager.activeSubscriptionInfoList?.firstOrNull()?.subscriptionId
+                } else null
+            } catch (_: SecurityException) { null }
+            @Suppress("DEPRECATION")
+            val smsManager: SmsManager = if (subId != null) SmsManager.getSmsManagerForSubscriptionId(subId) else SmsManager.getDefault()
             val parts = smsManager.divideMessage(message)
             smsManager.sendMultipartTextMessage(phoneNumber, null, parts, null, null)
             Log.d(TAG, "Sent SMS to $phoneNumber")
@@ -22,4 +30,3 @@ class SmsSender @Inject constructor(@ApplicationContext private val context: Con
         }
     }
 }
-
