@@ -40,6 +40,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        mlModelBinding = true
     }
 }
 
@@ -59,6 +60,7 @@ dependencies {
 
     // Hilt - Dependency Injection
     implementation(libs.hilt.android)
+    implementation(libs.tensorflow.lite.metadata)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
@@ -118,4 +120,17 @@ dependencies {
 
     // MPAndroidChart - Charting Library
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    // Apache POI - Excel export functionality
+    implementation("org.apache.poi:poi-ooxml:5.2.5")
+
+    // iText PDF - PDF export functionality
+    // implementation("com.itextpdf:itext7-core:7.2.5")
+    // implementation("com.itextpdf:itext7-io:7.2.5")
+    // implementation("com.itextpdf:itext7-layout:7.2.5")
+
+    // OpenPDF - PDF export functionality (alternative to iText)
+    implementation("com.github.librepdf:openpdf:1.3.30")
+
+    implementation("com.airbnb.android:lottie-compose:6.0.0")
 }

@@ -97,7 +97,6 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
         callModesViewModel.syncModesAndContacts()
     }
 
-    var showDialerDialog by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val telecomManager = context.getSystemService(android.content.Context.TELECOM_SERVICE) as android.telecom.TelecomManager
     var isDefaultDialer by remember { mutableStateOf(telecomManager.defaultDialerPackage == context.packageName) }
@@ -508,207 +507,170 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Place dialer button and dialog here, below Today's Statistics ---
-            Button(
-                onClick = { showDialerDialog = true },
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 24.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_call_block),
-                    contentDescription = "Open Dialer",
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Open Dialer")
+            // Dialer pad and contact search UI (always visible below statistics)
+            var searchQuery by remember { mutableStateOf("") }
+            var dialNumber by remember { mutableStateOf("") }
+            val filteredContacts = remember(searchQuery, deviceContactsList) {
+                val filtered = if (searchQuery.isBlank()) deviceContactsList
+                else deviceContactsList.filter {
+                    it.displayName.contains(searchQuery, ignoreCase = true) ||
+                    it.phoneNumber.contains(searchQuery, ignoreCase = true)
+                }
+                filtered.distinctBy { it.phoneNumber }
             }
-            if (showDialerDialog) {
-                Dialog(onDismissRequest = { showDialerDialog = false }) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        var searchQuery by remember { mutableStateOf("") }
-                        var dialNumber by remember { mutableStateOf("") }
-                        val filteredContacts = remember(searchQuery, deviceContactsList) {
-                            val filtered = if (searchQuery.isBlank()) deviceContactsList
-                            else deviceContactsList.filter {
-                                it.displayName.contains(searchQuery, ignoreCase = true) ||
-                                it.phoneNumber.contains(searchQuery, ignoreCase = true)
-                            }
-                            filtered.distinctBy { it.phoneNumber }
-                        }
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Search Contacts", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                androidx.compose.material3.OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search by name or number") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 150.dp).fillMaxWidth()
+                ) {
+                    items(filteredContacts) { contact ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .background(if (dialNumber == contact.phoneNumber) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
+                                .clickable {
+                                    dialNumberAndCall(contact.phoneNumber)
+                                },
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Search Contacts", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            androidx.compose.material3.OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                label = { Text("Search by name or number") },
-                                modifier = Modifier.fillMaxWidth()
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_mode_normal),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            LazyColumn(
-                                modifier = Modifier.heightIn(max = 150.dp).fillMaxWidth()
-                            ) {
-                                items(filteredContacts) { contact ->
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp)
-                                            .background(if (dialNumber == contact.phoneNumber) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
-                                            .clickable {
-                                                dialNumberAndCall(contact.phoneNumber)
-                                                showDialerDialog = false
-                                            },
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.ic_mode_normal),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Column {
-                                            Text(contact.displayName.ifEmpty { "Unknown" }, fontWeight = FontWeight.Medium)
-                                            Text(contact.phoneNumber, fontSize = 13.sp, color = Color.Gray)
-                                        }
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = dialNumber,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                maxLines = 1
-                            )
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                val dialPadRows = listOf(
-                                    listOf("1", "2", "3"),
-                                    listOf("4", "5", "6"),
-                                    listOf("7", "8", "9"),
-                                    listOf("*", "0", "#")
-                                )
-                                dialPadRows.forEach { row ->
-                                    Row(
-                                        horizontalArrangement = Arrangement.SpaceEvenly,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        row.forEach { symbol ->
-                                            Button(
-                                                onClick = { dialNumber += symbol },
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .padding(4.dp)
-                                                    .height(56.dp),
-                                                shape = MaterialTheme.shapes.medium,
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = MaterialTheme.colorScheme.surface,
-                                                    contentColor = MaterialTheme.colorScheme.primary
-                                                ),
-                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                                            ) {
-                                                Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                                            }
-                                        }
-                                    }
-                                }
-                                Row(
-                                    horizontalArrangement = Arrangement.End,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    Button(
-                                        onClick = { if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1) },
-                                        enabled = dialNumber.isNotEmpty(),
-                                        modifier = Modifier
-                                            .padding(4.dp)
-                                            .height(48.dp),
-                                        shape = MaterialTheme.shapes.medium,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.surface,
-                                            contentColor = MaterialTheme.colorScheme.error
-                                        ),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.ic_backspace),
-                                            contentDescription = "Delete",
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp),
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Button(
-                                        onClick = {
-                                            dialNumberAndCall(dialNumber)
-                                            showDialerDialog = false
-                                        },
-                                        enabled = dialNumber.isNotBlank(),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            contentColor = Color.White
-                                        ),
-                                        modifier = Modifier
-                                            .height(56.dp)
-                                            .width(120.dp)
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.ic_call_block),
-                                            contentDescription = "Dial",
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Dial")
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                Button(
-                                    onClick = { showDialerDialog = false },
-                                    modifier = Modifier.width(120.dp)
-                                ) {
-                                    Text("Close")
-                                }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(contact.displayName.ifEmpty { "Unknown" }, fontWeight = FontWeight.Medium)
+                                Text(contact.phoneNumber, fontSize = 13.sp, color = Color.Gray)
                             }
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = dialNumber,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    maxLines = 1
+                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val dialPadRows = listOf(
+                        listOf("1", "2", "3"),
+                        listOf("4", "5", "6"),
+                        listOf("7", "8", "9"),
+                        listOf("*", "0", "#")
+                    )
+                    dialPadRows.forEach { row ->
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            row.forEach { symbol ->
+                                Button(
+                                    onClick = { dialNumber += symbol },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(4.dp)
+                                        .height(56.dp),
+                                    shape = MaterialTheme.shapes.medium,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                        contentColor = MaterialTheme.colorScheme.primary
+                                    ),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                                ) {
+                                    Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Button(
+                            onClick = { if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1) },
+                            enabled = dialNumber.isNotEmpty(),
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .height(48.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_backspace),
+                                contentDescription = "Delete",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Button(
+                            onClick = {
+                                dialNumberAndCall(dialNumber)
+                            },
+                            enabled = dialNumber.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .height(56.dp)
+                                .width(120.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_call_block),
+                                contentDescription = "Dial",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Dial")
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // Show dialog if permission denied
+            if (showPermissionDeniedDialog) {
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { showPermissionDeniedDialog = false },
+                    title = { Text("Permission Required") },
+                    text = { Text("Please grant the CALL_PHONE permission to place calls directly from this app.") },
+                    confirmButton = {
+                        Button(onClick = { showPermissionDeniedDialog = false }) { Text("OK") }
+                    },
+                    modifier = Modifier.fillMaxWidth(0.95f)
+                )
             }
         }
-    }
-
-    // Show dialog if permission denied
-    if (showPermissionDeniedDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showPermissionDeniedDialog = false },
-            title = { Text("Permission Required") },
-            text = { Text("Please grant the CALL_PHONE permission to place calls directly from this app.") },
-            confirmButton = {
-                Button(onClick = { showPermissionDeniedDialog = false }) { Text("OK") }
-            },
-            modifier = Modifier.fillMaxWidth(0.95f)
-        )
     }
 }
 

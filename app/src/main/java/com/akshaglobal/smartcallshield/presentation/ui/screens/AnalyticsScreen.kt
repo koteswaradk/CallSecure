@@ -42,6 +42,7 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun AnalyticsScreen(viewModel: AnalyticsViewModel = hiltViewModel()) {
@@ -76,11 +77,6 @@ fun AnalyticsScreen(viewModel: AnalyticsViewModel = hiltViewModel()) {
                 onClick = { selectedTab = 1 },
                 text = { Text("Trends") }
             )
-            Tab(
-                selected = selectedTab == 2,
-                onClick = { selectedTab = 2 },
-                text = { Text("Export") }
-            )
         }
 
         // Content
@@ -93,7 +89,6 @@ fun AnalyticsScreen(viewModel: AnalyticsViewModel = hiltViewModel()) {
             when (selectedTab) {
                 0 -> OverviewTab(blockedCalls, spamCallsPrevented, drivingRepliesSent)
                 1 -> TrendsTab(viewModel)
-                2 -> ExportTab()
             }
         }
     }
@@ -245,13 +240,13 @@ private fun MPAndroidChartTrendsGraph(callTrends: List<Pair<String, Int>>) {
                 Entry(idx.toFloat(), pair.second.toFloat())
             }
             val dataSet = LineDataSet(entries, "Calls").apply {
-                color = AndroidColor.parseColor("#1976D2")
-                setCircleColor(AndroidColor.parseColor("#1976D2"))
+                color = "#1976D2".toColorInt()
+                setCircleColor("#1976D2".toColorInt())
                 lineWidth = 2f
                 circleRadius = 4f
                 setDrawValues(false)
                 setDrawFilled(true)
-                fillColor = AndroidColor.parseColor("#BBDEFB")
+                fillColor = "#BBDEFB".toColorInt()
             }
             chart.data = LineData(dataSet)
             chart.xAxis.valueFormatter = IndexAxisValueFormatter(callTrends.map { it.first })
@@ -264,42 +259,6 @@ private fun MPAndroidChartTrendsGraph(callTrends: List<Pair<String, Int>>) {
             .background(Color.White)
             .padding(8.dp)
     )
-}
-
-@Composable
-private fun ExportTab() {
-    Text(
-        "Export Data",
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(bottom = 12.dp)
-    )
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Export Call History", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text("Download your complete call logs", fontSize = 12.sp, color = Color.Gray)
-        }
-    }
-
-    Spacer(modifier = Modifier.height(12.dp))
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Export Analytics Report", fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text("Download detailed analytics and insights", fontSize = 12.sp, color = Color.Gray)
-        }
-    }
 }
 
 @Composable
@@ -378,8 +337,8 @@ private fun StatBox(label: String, value: Int, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(label, fontSize = 12.sp, color = Color.Gray)
-            Text(value.toString(), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(label, fontSize = 10.sp, color = Color.Gray)
+            Text(value.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

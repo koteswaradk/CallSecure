@@ -7,6 +7,3 @@ plugins {
     alias(libs.plugins.kotlin.kapt) apply false
     alias(libs.plugins.kotlin.ksp) apply false
 }
-
-// Add MPAndroidChart dependency if not present
-// implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")

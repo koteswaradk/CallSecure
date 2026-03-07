@@ -47,9 +47,10 @@ fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
     var showAddContactDialog by remember { mutableStateOf(false) }
 
     val allContacts by viewModel.allContacts.collectAsState()
-    val whitelistContacts by viewModel.whitelistContacts.collectAsState()
-    val blacklistContacts by viewModel.blacklistContacts.collectAsState()
-    val emergencyContacts by viewModel.emergencyContacts.collectAsState()
+    // Filter contacts by category for display
+    val familyContacts = allContacts.filter { it.category.equals("FAMILY", ignoreCase = true) }
+    val drivingContacts = allContacts.filter { it.category.equals("DRIVING", ignoreCase = true) }
+    val emergencyContacts = allContacts.filter { it.category.equals("EMERGENCY", ignoreCase = true) }
 
     Column(
         modifier = Modifier
@@ -74,12 +75,12 @@ fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
             Tab(
                 selected = selectedTab == 1,
                 onClick = { selectedTab = 1 },
-                text = { Text("Whitelist (${whitelistContacts.size})") }
+                text = { Text("Family (${familyContacts.size})") }
             )
             Tab(
                 selected = selectedTab == 2,
                 onClick = { selectedTab = 2 },
-                text = { Text("Blacklist (${blacklistContacts.size})") }
+                text = { Text("Driving (${drivingContacts.size})") }
             )
             Tab(
                 selected = selectedTab == 3,
@@ -93,10 +94,10 @@ fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
             0 -> ContactsList(allContacts) { contact ->
                 viewModel.deleteContact(contact)
             }
-            1 -> ContactsList(whitelistContacts) { contact ->
+            1 -> ContactsList(familyContacts) { contact ->
                 viewModel.deleteContact(contact)
             }
-            2 -> ContactsList(blacklistContacts) { contact ->
+            2 -> ContactsList(drivingContacts) { contact ->
                 viewModel.deleteContact(contact)
             }
             3 -> ContactsList(emergencyContacts) { contact ->
@@ -197,7 +198,7 @@ private fun AddContactDialog(
 ) {
     var phoneNumber by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("WHITELIST") }
+    var category by remember { mutableStateOf("FAMILY") } // Default to FAMILY
 
     Column(
         modifier = Modifier
@@ -239,7 +240,7 @@ private fun AddContactDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf("WHITELIST", "BLACKLIST", "FAMILY", "EMERGENCY").forEach { cat ->
+                    listOf("FAMILY", "DRIVING", "EMERGENCY").forEach { cat ->
                         Button(
                             onClick = { category = cat },
                             colors = ButtonDefaults.buttonColors(

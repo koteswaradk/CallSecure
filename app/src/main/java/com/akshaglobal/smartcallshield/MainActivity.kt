@@ -79,13 +79,26 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        val prefs = getSharedPreferences("smartcallshield_prefs", Context.MODE_PRIVATE)
+        val introShown = prefs.getBoolean("intro_shown", false)
+
         setContent {
             SmartCallShieldTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainNavigation()
+                    if (!introShown) {
+                        com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen(
+                            context = this,
+                            onFinish = {
+                                prefs.edit().putBoolean("intro_shown", true).apply()
+                                recreate()
+                            }
+                        )
+                    } else {
+                        MainNavigation()
+                    }
                 }
             }
         }

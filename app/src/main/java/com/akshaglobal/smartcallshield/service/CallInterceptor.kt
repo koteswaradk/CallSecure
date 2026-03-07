@@ -21,6 +21,7 @@ import com.akshaglobal.smartcallshield.util.PhoneNumberUtils
 import com.akshaglobal.smartcallshield.utils.SmsSender
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 import com.akshaglobal.smartcallshield.data.contacts.DeviceContactsProvider
+import com.akshaglobal.smartcallshield.service.TFLiteSpamDetector
 
 class CallInterceptor : BroadcastReceiver() {
 
@@ -39,6 +40,8 @@ class CallInterceptor : BroadcastReceiver() {
     // Track last SMS sent time per phone number for driving mode auto-reply
     private val lastSmsSentMap: MutableMap<String, Long> = mutableMapOf()
 
+    private var spamDetector: TFLiteSpamDetector? = null
+
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) return
 
@@ -51,6 +54,17 @@ class CallInterceptor : BroadcastReceiver() {
         deviceContactsProvider = entryPoint.deviceContactsProvider()
         contactRepository = entryPoint.contactRepository()
         drivingModeLogRepository = entryPoint.drivingModeLogRepository()
+
+        if (spamDetector == null) {
+            spamDetector = TFLiteSpamDetector(context)
+        }
+
+        // Show toast if app is set as default dialer
+        val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? android.telecom.TelecomManager
+        val packageName = context.packageName
+        if (telecomManager != null && telecomManager.defaultDialerPackage == packageName) {
+            android.widget.Toast.makeText(context, "SmartCallShield is now the default dialer", android.widget.Toast.LENGTH_SHORT).show()
+        }
 
         // Request permissions if not granted
         val permissions = arrayOf(android.Manifest.permission.SEND_SMS, android.Manifest.permission.READ_PHONE_STATE)
@@ -114,7 +128,30 @@ class CallInterceptor : BroadcastReceiver() {
     }
 
     private fun handleIncomingCall(context: Context, phoneNumber: String?) {
-        if (phoneNumber.isNullOrEmpty()) return
+        if (phoneNumber == null) return
+
+        // Use improved TFLiteSpamDetector prediction
+        val prediction = spamDetector?.predict(phoneNumber) ?: 0
+        // 0: safe, 1: spam, 2: robocall, 3: unknown
+        when (prediction) {
+            1 -> {
+                Log.d(TAG, "[SPAM DETECTION] Call flagged as SPAM. Blocking call.")
+                rejectCall(context)
+                return
+            }
+            2 -> {
+                Log.d(TAG, "[SPAM DETECTION] Call flagged as ROBOCALL. Blocking call.")
+                rejectCall(context)
+                return
+            }
+            3 -> {
+                Log.d(TAG, "[SPAM DETECTION] Call flagged as UNKNOWN. Silencing call.")
+                muteCall(context)
+                return
+            }
+            else -> Log.d(TAG, "[SPAM DETECTION] Call is safe.")
+        }
+        // If not blocked, proceed with business logic
         val scope = CoroutineScope(Dispatchers.Default)
         scope.launch {
             try {

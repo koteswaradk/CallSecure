@@ -1,7 +1,13 @@
+// NOTE: The TFLite model file must be named 'spam_detection_model.tflite' and placed in the app/src/main/assets/ folder.
+// This class loads and uses the model for real-time spam/robocall/unknown call detection.
+
 package com.akshaglobal.smartcallshield.service.ai
 
 import android.content.Context
 import com.akshaglobal.smartcallshield.data.model.SpamDetectionResult
+import org.tensorflow.lite.Interpreter
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
@@ -14,9 +20,12 @@ import kotlin.random.Random
 class SpamDetectionModel @Inject constructor(
     private val context: Context
 ) {
+    private var interpreter: Interpreter? = null
+    private val modelFileName = "spam_detection_model.tflite"
 
-    // Placeholder for TensorFlow Lite interpreter
-    // In production, load actual .tflite model file
+    init {
+        initialize()
+    }
 
     suspend fun detectSpam(phoneNumber: String): SpamDetectionResult {
         return try {
@@ -57,13 +66,13 @@ class SpamDetectionModel @Inject constructor(
                 0 -> if (phoneNumber.startsWith("+1")) 1.0f else 0.0f
                 1 -> (phoneNumber.filter { it.isDigit() }.length / 15f) // normalized length
                 2 -> phoneNumber.filter { it == phoneNumber[0] }.length / phoneNumber.length.toFloat()
-                3 -> Random.nextFloat() // placeholder for pattern hash
-                4 -> Random.nextFloat() // placeholder for country risk score
-                5 -> Random.nextFloat() // placeholder for frequency score
-                6 -> Random.nextFloat() // placeholder for time pattern
-                7 -> Random.nextFloat() // placeholder for registered/unregistered
-                8 -> Random.nextFloat() // placeholder for carrier type
-                9 -> Random.nextFloat() // placeholder for recent reports
+                3 -> 0.0f // Replace with real feature if available
+                4 -> 0.0f
+                5 -> 0.0f
+                6 -> 0.0f
+                7 -> 0.0f
+                8 -> 0.0f
+                9 -> 0.0f
                 else -> 0.0f
             }
         }
@@ -75,9 +84,16 @@ class SpamDetectionModel @Inject constructor(
      * In production: actual TFLite interpreter call
      */
     private suspend fun runInference(features: FloatArray): Float {
-        // TODO: Replace with actual TensorFlow Lite inference
-        // For now, return mock result based on features
-        return features.average().toFloat().coerceIn(0f, 1f)
+        // Use TFLite interpreter if available
+        val interpreter = interpreter ?: return 0.5f
+        val inputBuffer = ByteBuffer.allocateDirect(4 * features.size).order(ByteOrder.nativeOrder())
+        features.forEach { inputBuffer.putFloat(it) }
+        inputBuffer.rewind()
+        val outputBuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder())
+        outputBuffer.rewind()
+        interpreter.run(inputBuffer, outputBuffer)
+        outputBuffer.rewind()
+        return outputBuffer.float
     }
 
     /**
@@ -98,30 +114,33 @@ class SpamDetectionModel @Inject constructor(
      */
     fun initialize() {
         try {
-            // Load model from assets
-            // val model = loadModelFile("spam_detection_model.tflite")
-            // interpreter = Interpreter(model)
-
-            // Initialize success logging
+            if (interpreter == null) {
+                val model = loadModelFile(modelFileName)
+                interpreter = Interpreter(model)
+            }
         } catch (e: Exception) {
             // Log initialization error
+            interpreter = null
         }
     }
 
     /**
      * Load model file from assets
      */
-    private fun loadModelFile(fileName: String): ByteArray {
-        return context.assets.open(fileName).use { input ->
-            input.readBytes()
-        }
+    private fun loadModelFile(fileName: String): ByteBuffer {
+        val assetFileDescriptor = context.assets.openFd(fileName)
+        val inputStream = assetFileDescriptor.createInputStream()
+        val fileChannel = inputStream.channel
+        val startOffset = assetFileDescriptor.startOffset
+        val declaredLength = assetFileDescriptor.declaredLength
+        return fileChannel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
     }
 
     /**
      * Release TensorFlow Lite resources
      */
     fun cleanup() {
-        // interpreter?.close()
+        interpreter?.close()
+        interpreter = null
     }
 }
-

@@ -38,6 +38,8 @@ class HandleCallUseCaseTest {
         coEvery { prefs.autoRejectSpam } returns flow { emit(true) }
         coEvery { prefs.autoRejectUnknown } returns flow { emit(false) }
         coEvery { prefs.spamConfidenceThreshold } returns flow { emit(0.5f) }
+        coEvery { prefs.isAppEnabled } returns flow { emit(true) } // Mocking isAppEnabled to return true
+        coEvery { prefs.currentMode } returns flow { emit("NORMAL") } // Mocking currentMode
 
         val detectUseCase = DetectSpamUseCase(spamModel, contactRepo, spamReportRepo, prefs)
         val callLogRepo = mockk<CallLogRepository>(relaxed = true)
