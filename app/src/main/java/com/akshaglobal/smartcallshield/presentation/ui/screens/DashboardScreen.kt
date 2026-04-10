@@ -2,7 +2,6 @@ package com.akshaglobal.smartcallshield.presentation.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -52,12 +51,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.core.net.toUri
 
 import androidx.compose.foundation.layout.size
+import com.akshaglobal.smartcallshield.presentation.ui.components.ModeButton
+import com.akshaglobal.smartcallshield.presentation.ui.components.StatisticsCard
 
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesViewModel: CallModesViewModel = hiltViewModel()) {
@@ -721,74 +721,3 @@ private fun ModeSelector(
     }
 }
 
-@Composable
-private fun ModeButton(
-    label: String,
-    iconRes: Int,
-    isSelected: Boolean,
-    enabled: Boolean = true,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .width(85.dp)
-            .height(85.dp)
-            .padding(4.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
-        )
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = label,
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(36.dp),
-                tint = if (isSelected && enabled) Color.Unspecified else Color.White
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatisticsCard(
-    title: String,
-    value: String,
-    icon: Int,
-    backgroundColor: Color
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(title, fontSize = 14.sp, color = Color.Gray)
-                Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            }
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = title,
-                modifier = Modifier
-                    .width(40.dp)
-                    .height(40.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}

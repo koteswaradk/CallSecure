@@ -39,7 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.akshaglobal.smartcallshield.data.model.ContactEntity
+import com.akshaglobal.smartcallshield.common_ui.components.ContactCard
 import com.akshaglobal.smartcallshield.presentation.viewmodel.ContactsViewModel
+
+
 
 @Composable
 fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
@@ -144,48 +147,6 @@ private fun ContactsList(
                 ContactCard(contact) {
                     onDelete(contact)
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ContactCard(
-    contact: ContactEntity,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    contact.displayName.ifEmpty { "Unknown" },
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    contact.phoneNumber,
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-                Text(
-                    contact.category,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, "Delete", tint = Color.Red)
             }
         }
     }

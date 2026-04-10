@@ -14,13 +14,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
 import dagger.hilt.android.AndroidEntryPoint
 import com.akshaglobal.smartcallshield.presentation.ui.navigation.MainNavigation
+import com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen
 import com.akshaglobal.smartcallshield.presentation.ui.theme.SmartCallShieldTheme
 import com.akshaglobal.smartcallshield.service.DrivingModeService
+import com.akshaglobal.smartcallshield.service.ai.FirstLaunchTrainer
+import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var callLogRepository: CallLogRepository
+    @Inject lateinit var preferencesManager: com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
+    @Inject lateinit var spamDetectionModel: SpamDetectionModel
 
     private val requiredPermissions = arrayOf(
         Manifest.permission.READ_CALL_LOG,
@@ -71,12 +83,10 @@ class MainActivity : ComponentActivity() {
         permissionLauncher.launch(requiredPermissions)
 
         // Request call screening role if needed (Android 10+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
-            if (!roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
-                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-                startActivity(intent)
-            }
+        val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
+        if (!roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
+            val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+            startActivity(intent)
         }
 
         val prefs = getSharedPreferences("smartcallshield_prefs", Context.MODE_PRIVATE)
@@ -89,7 +99,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     if (!introShown) {
-                        com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen(
+                        IntroScreen(
                             context = this,
                             onFinish = {
                                 prefs.edit().putBoolean("intro_shown", true).apply()
@@ -112,15 +122,42 @@ class MainActivity : ComponentActivity() {
 
         // Register call receiver
         registerCallReceiver()
+
+        // TensorFlow training on first launch
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val modelTrained = prefs.getBoolean("model_trained", false)
+        if (!modelTrained) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val trainer = FirstLaunchTrainer(this@MainActivity, callLogRepository)
+                trainer.trainModelOnFirstLaunch()
+            }
+        }
+
+        // Each time app launches: read call logs and block spam/robocall/unwanted calls if enabled
+        CoroutineScope(Dispatchers.IO).launch {
+            val isAppEnabled = preferencesManager.isAppEnabled.firstOrNull() ?: true
+            if (isAppEnabled) {
+                val callLogs = callLogRepository.getAllCallLogs().firstOrNull() ?: emptyList()
+                for (log in callLogs) {
+                    try {
+                        val result = spamDetectionModel.detectSpam(log.phoneNumber)
+                        if (result.isSpam || result.category == "ROBOCALL" || result.category == "LIKELY_SPAM" || result.category == "SUSPICIOUS") {
+                            // Block the call (mark as blocked in DB)
+                            val updatedLog = log.copy(wasBlocked = true, isSpam = true, spamScore = result.confidence)
+                            callLogRepository.addCallLog(updatedLog)
+                            Log.d(TAG, "Blocked call: ${log.phoneNumber} [${result.category}]")
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Spam detection failed for ${log.phoneNumber}: ${e.message}")
+                    }
+                }
+            }
+        }
     }
 
     private fun startDrivingModeIfNeeded() {
         // Check preferences and start service if needed
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(Intent(this, DrivingModeService::class.java))
-        } else {
-            startService(Intent(this, DrivingModeService::class.java))
-        }
+        startForegroundService(Intent(this, DrivingModeService::class.java))
     }
 
     private fun registerCallReceiver() {

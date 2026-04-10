@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.provider.ContactsContract
+import android.util.Log
 import com.akshaglobal.smartcallshield.data.model.DeviceContact
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -49,7 +50,7 @@ class DeviceContactsProvider @Inject constructor(@ApplicationContext private val
                 }
             }
         } catch (e: SecurityException) {
-            android.util.Log.e("DeviceContactsProvider", "Missing READ_CONTACTS permission", e)
+            Log.e("DeviceContactsProvider", "Missing READ_CONTACTS permission", e)
             // Optionally notify the user or return an empty list
         }
 

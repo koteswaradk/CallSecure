@@ -130,30 +130,72 @@ class CallInterceptor : BroadcastReceiver() {
     private fun handleIncomingCall(context: Context, phoneNumber: String?) {
         if (phoneNumber == null) return
 
-        // Use improved TFLiteSpamDetector prediction
-        val prediction = spamDetector?.predict(phoneNumber) ?: 0
-        // 0: safe, 1: spam, 2: robocall, 3: unknown
-        when (prediction) {
-            1 -> {
-                Log.d(TAG, "[SPAM DETECTION] Call flagged as SPAM. Blocking call.")
-                rejectCall(context)
-                return
-            }
-            2 -> {
-                Log.d(TAG, "[SPAM DETECTION] Call flagged as ROBOCALL. Blocking call.")
-                rejectCall(context)
-                return
-            }
-            3 -> {
-                Log.d(TAG, "[SPAM DETECTION] Call flagged as UNKNOWN. Silencing call.")
-                muteCall(context)
-                return
-            }
-            else -> Log.d(TAG, "[SPAM DETECTION] Call is safe.")
-        }
-        // If not blocked, proceed with business logic
+        // Only perform filtering/blocking if app is enabled
         val scope = CoroutineScope(Dispatchers.Default)
         scope.launch {
+            val appEnabled = try { preferencesManager.isAppEnabled.first() } catch (e: Exception) { true }
+            if (!appEnabled) {
+                Log.d(TAG, "[APP ENABLED CHECK] App is disabled, allowing all calls. No filtering or blocking.")
+                // Optionally, log the call as allowed
+                val callLog = CallLogEntity(
+                    phoneNumber = phoneNumber,
+                    timestamp = System.currentTimeMillis(),
+                    callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                    isSpam = false,
+                    wasBlocked = false
+                )
+                callLogRepository.addCallLog(callLog)
+                return@launch
+            }
+
+            // Use improved TFLiteSpamDetector prediction
+            val prediction = spamDetector?.predict(phoneNumber) ?: 0
+            // 0: safe, 1: spam, 2: robocall, 3: unknown
+            when (prediction) {
+                1 -> {
+                    Log.d(TAG, "[SPAM DETECTION] Call flagged as SPAM. Blocking call.")
+                    rejectCall(context)
+                    // Log as blocked
+                    val callLog = CallLogEntity(
+                        phoneNumber = phoneNumber,
+                        timestamp = System.currentTimeMillis(),
+                        callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                        isSpam = true,
+                        wasBlocked = true
+                    )
+                    callLogRepository.addCallLog(callLog)
+                    return@launch
+                }
+                2 -> {
+                    Log.d(TAG, "[SPAM DETECTION] Call flagged as ROBOCALL. Blocking call.")
+                    rejectCall(context)
+                    val callLog = CallLogEntity(
+                        phoneNumber = phoneNumber,
+                        timestamp = System.currentTimeMillis(),
+                        callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                        isSpam = true,
+                        wasBlocked = true
+                    )
+                    callLogRepository.addCallLog(callLog)
+                    return@launch
+                }
+                3 -> {
+                    Log.d(TAG, "[SPAM DETECTION] Call flagged as UNKNOWN. Silencing call.")
+                    muteCall(context)
+                    val callLog = CallLogEntity(
+                        phoneNumber = phoneNumber,
+                        timestamp = System.currentTimeMillis(),
+                        callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                        isSpam = false,
+                        wasBlocked = false
+                    )
+                    callLogRepository.addCallLog(callLog)
+                    return@launch
+                }
+                else -> Log.d(TAG, "[SPAM DETECTION] Call is safe.")
+            }
+
+            // If not blocked, proceed with business logic
             try {
                 val decision = handleCallUseCase.invoke(phoneNumber)
 
