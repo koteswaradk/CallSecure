@@ -116,6 +116,9 @@
     <string name="msg_requires_permission">This feature requires permission</string>
 
     <!-- Notifications -->
+    <string name="notif_call_protection_active">SmartCallShield Protection Active</string>
+    <string name="notif_call_protection_desc">Monitoring for incoming calls and blocking spam.</string>
+    <string name="notif_action_disable">Disable Protection</string>
     <string name="notif_driving_mode_active">Driving Mode Active</string>
     <string name="notif_driving_mode_desc">Incoming calls will be handled safely</string>
     <string name="notif_call_blocked">Call Blocked</string>

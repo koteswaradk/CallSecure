@@ -42,6 +42,16 @@ android {
         viewBinding = true
         mlModelBinding = true
     }
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+    }
+    
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 dependencies {

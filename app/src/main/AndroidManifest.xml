@@ -16,6 +16,8 @@
     <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
     <uses-permission android:name="android.permission.CALL_SCREENING" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Location for driving detection (optional) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -99,12 +101,35 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".service.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.akshaglobal.smartcallshield.ACTION_DISABLE_PROTECTION" />
+            </intent-filter>
+        </receiver>
+
         <!-- Foreground Service for Driving Mode -->
         <service
             android:name=".service.DrivingModeService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="microphone" />
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_TYPE"
+                android:value="This service handles automated call responses and safety monitoring while the user is driving." />
+        </service>
+
+        <!-- Foreground Service for Call Protection -->
+        <service
+            android:name=".service.CallProtectionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_TYPE"
+                android:value="This service monitors incoming calls and blocks spam to protect the user's privacy and security." />
+        </service>
 
         <!-- CallScreeningService for call blocking on Android 10+ -->
         <service

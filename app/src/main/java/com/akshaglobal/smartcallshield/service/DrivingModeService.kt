@@ -1,7 +1,11 @@
 package com.akshaglobal.smartcallshield.service
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -27,6 +31,7 @@ class DrivingModeService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "DrivingModeService created")
+        createNotificationChannel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -38,14 +43,33 @@ class DrivingModeService : Service() {
             .setContentText("Incoming calls will be handled safely")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setOngoing(true)
+            .setAutoCancel(false)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
 
-        startForeground(NOTIFICATION_ID, notification)
+        try {
+            startForeground(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start foreground service", e)
+        }
 
         // Start monitoring driving mode
         startDrivingModeMonitoring()
 
         return START_STICKY
+    }
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Driving Mode",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Shows that SmartCallShield is handling calls while driving"
+        }
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
     }
 
     private fun startDrivingModeMonitoring() {

@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,6 +35,8 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var preferencesManager: com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
     @Inject lateinit var spamDetectionModel: SpamDetectionModel
 
+    private var isInitialized = false
+
     private val requiredPermissions = arrayOf(
         Manifest.permission.READ_CALL_LOG,
         Manifest.permission.READ_PHONE_STATE,
@@ -46,8 +49,8 @@ class MainActivity : ComponentActivity() {
         Manifest.permission.INTERNET,
         Manifest.permission.ACCESS_NETWORK_STATE
     ).plus(
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(Manifest.permission.SCHEDULE_EXACT_ALARM)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             emptyArray()
         }
@@ -62,25 +65,31 @@ class MainActivity : ComponentActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        if (allGranted) {
-            Log.d(TAG, "All permissions granted")
-            initializeApp()
-        } else {
-            Log.w(TAG, "Some permissions denied")
-            permissions.forEach { (permission, granted) ->
-                if (!granted) {
-                    Log.w(TAG, "Permission denied: $permission")
-                }
-            }
+        Log.d(TAG, "Permissions result received")
+        // Initialize app regardless of whether all permissions are granted
+        // Essential logic inside initializeApp should check for specific permissions
+        initializeApp()
+        
+        val anyDenied = permissions.entries.filter { !it.value }
+        if (anyDenied.isNotEmpty()) {
+            Log.w(TAG, "Some permissions denied: ${anyDenied.map { it.key }}")
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Request permissions
-        permissionLauncher.launch(requiredPermissions)
+        // Always call initializeApp, it will handle internal checks
+        initializeApp()
+
+        // Check if we need to request permissions
+        val needsRequest = requiredPermissions.any {
+            androidx.core.content.ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+
+        if (needsRequest) {
+            permissionLauncher.launch(requiredPermissions)
+        }
 
         // Request call screening role if needed (Android 10+)
         val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
@@ -115,10 +124,16 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun initializeApp() {
+        if (isInitialized) return
+        isInitialized = true
+
         Log.d(TAG, "Initializing app")
 
         // Start driving mode service if enabled
         startDrivingModeIfNeeded()
+
+        // Start call protection service and observe its state
+        observeCallProtectionState()
 
         // Register call receiver
         registerCallReceiver()
@@ -158,6 +173,19 @@ class MainActivity : ComponentActivity() {
     private fun startDrivingModeIfNeeded() {
         // Check preferences and start service if needed
         startForegroundService(Intent(this, DrivingModeService::class.java))
+    }
+
+    private fun observeCallProtectionState() {
+        lifecycleScope.launch {
+            preferencesManager.isAppEnabled.collect { enabled ->
+                Log.d(TAG, "isAppEnabled collected: $enabled")
+                if (enabled) {
+                    val intent = Intent(this@MainActivity, com.akshaglobal.smartcallshield.service.CallProtectionService::class.java)
+                    Log.d(TAG, "Starting CallProtectionService")
+                    startForegroundService(intent)
+                }
+            }
+        }
     }
 
     private fun registerCallReceiver() {

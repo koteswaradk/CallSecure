@@ -25,6 +25,46 @@ class HandleCallUseCase @Inject constructor(
         val currentMode = preferencesManager.currentMode.first().uppercase()
         val normalizedNumber = phoneNumber.replace(Regex("[^+0-9]"), "")
         println("[DEBUG] Current mode: $currentMode, Incoming: $normalizedNumber")
+
+        if (currentMode == "DRIVING") {
+            val drivingEnabled = preferencesManager.drivingModeEnabled.first()
+            if (drivingEnabled) {
+                val drivingContacts = contactRepository.getContactsByCategory("DRIVING").first()
+                val isDrivingContact = drivingContacts.any { c ->
+                    val contactNormalized = c.phoneNumber.replace(Regex("[^+0-9]"), "")
+                    contactNormalized.endsWith(normalizedNumber) || normalizedNumber.endsWith(contactNormalized)
+                }
+                
+                return if (isDrivingContact) {
+                    println("[DEBUG] Driving contact detected. Decision: REPLY_SMS")
+                    CallDecision.REPLY_SMS
+                } else {
+                    println("[DEBUG] Not a driving contact in Driving Mode. Decision: REJECT")
+                    CallDecision.REJECT
+                }
+            }
+        }
+
+        if (currentMode == "FAMILY" || currentMode == "EMERGENCY") {
+            val activeMode = modeRepository.getActiveMode().first()
+            if (activeMode != null && activeMode.name.uppercase() == currentMode) {
+                val modeWithContacts = modeRepository.getModeWithContacts(activeMode.id)
+                val contacts = modeWithContacts?.contacts ?: emptyList()
+                val isListedContact = contacts.any { c ->
+                    val contactNormalized = c.phoneNumber.replace(Regex("[^+0-9]"), "")
+                    contactNormalized.endsWith(normalizedNumber) || normalizedNumber.endsWith(contactNormalized)
+                }
+                
+                return if (isListedContact) {
+                    println("[DEBUG] Contact listed in $currentMode. Decision: ALLOW")
+                    CallDecision.ALLOW
+                } else {
+                    println("[DEBUG] Contact NOT listed in $currentMode. Decision: REJECT")
+                    CallDecision.REJECT
+                }
+            }
+        }
+
         val allowedByMode = when (currentMode) {
             "NORMAL" -> {
                 try {
