@@ -17,6 +17,8 @@ class GetAnalyticsUseCase @Inject constructor(
         callLogRepository.getSpamCallsCount()
     fun getDrivingModeRepliesCount(): Flow<Long> =
         drivingModeRepository.getSuccessfulAutoRepliesCount()
+    fun getDrivingModeRepliesInTimeRange(startTime: Long, endTime: Long): Flow<List<com.akshaglobal.smartcallshield.data.model.DrivingModeLogEntity>> =
+        drivingModeRepository.getDrivingModeLogsBetween(startTime, endTime)
     fun getSpamTrends(): Flow<List<com.akshaglobal.smartcallshield.data.model.SpamReportEntity>> =
         spamReportRepository.getHighRiskNumbers()
 }

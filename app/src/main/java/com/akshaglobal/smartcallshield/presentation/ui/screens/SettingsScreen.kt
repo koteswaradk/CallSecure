@@ -72,18 +72,13 @@ import com.akshaglobal.smartcallshield.presentation.ui.screens.ExportDataSection
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    isAppEnabled: Boolean?, // Accept nullable for loading state
-    callModesViewModel: CallModesViewModel = hiltViewModel() // <-- Inject CallModesViewModel
+    isAppEnabled: Boolean? // Accept nullable for loading state
 ) {
     val spamDetectionEnabled by viewModel.spamDetectionEnabled.collectAsState()
     val drivingModeEnabled by viewModel.drivingModeEnabled.collectAsState()
     val drivingModeAutoReply by viewModel.drivingModeAutoReply.collectAsState()
     val spamConfidenceThreshold by viewModel.spamConfidenceThreshold.collectAsState()
     val autoRejectSpam by viewModel.autoRejectSpam.collectAsState()
-    val modesState = callModesViewModel.modes.collectAsState(initial = emptyList())
-    val modes = modesState.value
-
-    val drivingModeExists = modes.any { it.name.equals("Driving", ignoreCase = true) }
 
     if (isAppEnabled == null) {
         // Show loading indicator while state is loading
@@ -154,7 +149,7 @@ fun SettingsScreen(
             description = "Automatically handle calls while driving",
             isEnabled = drivingModeEnabled,
             onToggle = { viewModel.setDrivingModeEnabled(it) },
-            enabled = isAppEnabled && drivingModeExists // Enable only if app is enabled and Driving mode exists
+            enabled = isAppEnabled == true // Enable if app is enabled
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -174,12 +169,12 @@ fun SettingsScreen(
                 .padding(8.dp),
             label = { Text("Reply message") },
             maxLines = 5,
-            enabled = !drivingModeExists, // Enable only if Driving mode does not exist
-            placeholder = { if (drivingModeExists) Text("Edit in Driving Mode setup") else Text("Enter auto-reply message") }
+            enabled = isAppEnabled == true && !drivingModeEnabled, // Enabled only if app is enabled AND driving mode switch is OFF
+            placeholder = { Text("Enter auto-reply message") }
         )
-        if (drivingModeExists) {
+        if (drivingModeEnabled) {
             Text(
-                "To edit the auto-reply message, remove the Driving mode from Call Modes Management.",
+                "Disable Driving Mode to edit the auto-reply message.",
                 color = Color.Gray,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)

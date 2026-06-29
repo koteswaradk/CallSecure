@@ -51,6 +51,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.core.net.toUri
@@ -80,14 +84,16 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
     val deviceContacts by callModesViewModel.deviceContacts.collectAsState()
     // Fix: lastSelectedMode should be declared here, nullable, and initialized with currentMode
     var lastSelectedMode by remember { mutableStateOf<CallMode?>(currentMode) }
+    var showDialPad by rememberSaveable { mutableStateOf(false) }
+
+    // Persistent state for search and dialer
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var dialNumber by rememberSaveable { mutableStateOf("") }
 
     // Sync lastSelectedMode with currentMode whenever currentMode changes
     LaunchedEffect(currentMode) {
         lastSelectedMode = currentMode
     }
-
-    // Always allow the switch to be toggled
-    // Enable Normal mode button if NORMAL mode exists
 
     // Always reload modes and contacts from the database when DashboardScreen is recomposed
     LaunchedEffect(Unit) {
@@ -213,462 +219,361 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showDialPad = !showDialPad },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White
             ) {
-                Text(
-                    "SmartAICallShield",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                // Switch is always enabled so user can interact
-                Switch(
-                    checked = isAppEnabled,
-                    onCheckedChange = { checked ->
-                        if (checked && !isAppEnabled) {
-                            showEnableDialog = true
-                        } else if (!checked && isAppEnabled) {
-                            showDisableDialog = true
-                        }
-                    },
-                    enabled = true // Always enabled for user interaction
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_call_block), // Using existing dial-like icon
+                    contentDescription = "Dial Pad",
+                    modifier = Modifier.size(24.dp)
                 )
             }
-            // Show dialog to enable switch on first attempt
-            if (showEnableDialog) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = { showEnableDialog = false },
-                    title = { Text("Enable CallShield") },
-                    text = {
-                        Text("To enable CallShield, you must confirm. Normal mode will be set by default.")
-                    },
-                    confirmButton = {
-                        Button(onClick = {
-                            viewModel.toggleAppEnabled()
-                            viewModel.setMode(CallMode.NORMAL)
-                            callModesViewModel.createOrActivateMode("NORMAL")
-                            showEnableDialog = false
-                            SmartCallShieldApp.isCallShieldEnabled = true
-                        }) { Text("OK") }
-                    },
-                    dismissButton = {
-                        Button(onClick = { showEnableDialog = false }) { Text("Cancel") }
-                    },
-                    modifier = Modifier.fillMaxWidth(0.95f)
+        }
+    ) { paddingValues ->
+        val filteredContacts = remember(searchQuery, deviceContactsList) {
+            val filtered = if (searchQuery.isBlank()) deviceContactsList
+            else deviceContactsList.filter {
+                it.displayName.contains(searchQuery, ignoreCase = true) ||
+                it.phoneNumber.contains(searchQuery, ignoreCase = true)
+            }
+            filtered.distinctBy { it.phoneNumber }
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 4.dp,
+                    bottom = paddingValues.calculateBottomPadding() + (if (showDialPad) 400.dp else 16.dp)
                 )
-            }
-            if (showWarningDialog) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = {},
-                    title = { Text("Enable CallShield") },
-                    text = {
-                        Text("You are altering your phone's default call receiving behavior, which may alter your incoming calls by blocking spam, automated, and unknown calls. Press OK to enable CallShield. Normal mode will be set by default.")
-                    },
-                    confirmButton = {
-                        Button(onClick = {
-                            viewModel.toggleAppEnabled()
-                            viewModel.setMode(CallMode.NORMAL)
-                            showWarningDialog = false
-                            SmartCallShieldApp.isCallShieldEnabled = true
-                        }) { Text("OK") }
-                    },
-                    dismissButton = {
-                        Button(onClick = {
-                            showWarningDialog = false
-                            SmartCallShieldApp.isCallShieldEnabled = false
-                        }) { Text("Cancel") }
-                    },
-                    modifier = Modifier.fillMaxWidth(0.95f)
-                )
-            }
-            if (showDisableDialog) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = {},
-                    title = { Text("Disable CallShield") },
-                    text = {
-                        Text("You are disabling the switch. Your phone will receive ALL CALLS WITHOUT ANY CALL FILTERING, including unknown calls. Press OK to disable CallShield.")
-                    },
-                    confirmButton = {
-                        Button(onClick = {
-                            viewModel.toggleAppEnabled()
-                            // Optionally, clear the mode or set to a disabled state
-                            showDisableDialog = false
-                        }) { Text("OK") }
-                    },
-                    dismissButton = {
-                        Button(onClick = {
-                            showDisableDialog = false
-                        }) { Text("Cancel") }
-                    },
-                    modifier = Modifier.fillMaxWidth(0.95f)
-                )
-            }
-            // Guard to prevent multiple dialogs from being triggered in rapid succession
-            var dialogInProgress by remember { mutableStateOf(false) }
-            if (showModeChangeDialog && pendingMode != null) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = {
-                        showModeChangeDialog = false
-                        pendingMode = null
-                        dialogInProgress = false
-                    },
-                    title = { Text("Change Call Mode") },
-                    text = {
-                        Text("CallShield will be applied to the selected mode. Press OK to switch mode.")
-                    },
-                    confirmButton = {
-                        Button(onClick = {
-                            // Only update mode and setActiveMode here
-                            viewModel.setMode(pendingMode!!)
-                            val modeName = when (pendingMode) {
-                                CallMode.FAMILY -> "FAMILY"
-                                CallMode.DRIVING -> "DRIVING"
-                                CallMode.EMERGENCY -> "EMERGENCY"
-                                else -> "NORMAL"
-                            }
-                            val modeEntity = modes.find { it.name.equals(modeName, ignoreCase = true) }
-                            if (modeEntity != null) {
-                                callModesViewModel.setActiveMode(modeEntity.id)
-                            }
-                            lastSelectedMode = pendingMode // pendingMode is not null here
-                            showModeChangeDialog = false
-                            pendingMode = null
-                            dialogInProgress = false
-                        }) { Text("OK") }
-                    },
-                    dismissButton = {
-                        Button(onClick = {
-                            showModeChangeDialog = false
-                            pendingMode = null
-                            dialogInProgress = false
-                        }) { Text("Cancel") }
-                    },
-                    modifier = Modifier.fillMaxWidth(0.95f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Premium Badge
-            if (isPremium) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFD700)
-                    )
-                ) {
-                    Text(
-                        "✨ Premium Features Unlocked",
-                        modifier = Modifier.padding(16.dp),
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // Mode Selection
-            Text(
-                "Call Mode",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            // Show loading indicator if currentMode is not loaded (null or not set)
-            if (currentMode == null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-                return
-            }
-
-            // ModeSelector: All modes disabled if app is off. Normal enabled only if app is enabled. Others only if contacts exist and app is enabled.
-            ModeSelector(
-                currentMode, // use currentMode for selection
-                enabled = isAppEnabled,
-                normalEnabled = isAppEnabled,
-                familyEnabled = isAppEnabled && enabledModes["FAMILY"] == true,
-                drivingEnabled = isAppEnabled && enabledModes["DRIVING"] == true,
-                emergencyEnabled = isAppEnabled && enabledModes["EMERGENCY"] == true
-            ) { newMode ->
-                if (!isAppEnabled) return@ModeSelector
-                // Only show dialog if not already showing, not in progress, and mode is actually changing
-                if (!showModeChangeDialog && !dialogInProgress && lastSelectedMode != newMode) {
-                    dialogInProgress = true
-                    pendingMode = newMode
-                    showModeChangeDialog = true
-                }
-            }
-            // Only render the dialog if showModeChangeDialog is true and pendingMode is not null
-            if (showModeChangeDialog && pendingMode != null) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = {
-                        showModeChangeDialog = false
-                        pendingMode = null
-                        dialogInProgress = false
-                    },
-                    title = { Text("Change Call Mode") },
-                    text = {
-                        Text("CallShield will be applied to the selected mode. Press OK to switch mode.")
-                    },
-                    confirmButton = {
-                        Button(onClick = {
-                            // Only update mode and setActiveMode here
-                            viewModel.setMode(pendingMode!!)
-                            val modeName = when (pendingMode) {
-                                CallMode.FAMILY -> "FAMILY"
-                                CallMode.DRIVING -> "DRIVING"
-                                CallMode.EMERGENCY -> "EMERGENCY"
-                                else -> "NORMAL"
-                            }
-                            val modeEntity = modes.find { it.name.equals(modeName, ignoreCase = true) }
-                            if (modeEntity != null) {
-                                callModesViewModel.setActiveMode(modeEntity.id)
-                            }
-                            lastSelectedMode = pendingMode
-                            showModeChangeDialog = false
-                            pendingMode = null
-                            dialogInProgress = false
-                        }) { Text("OK") }
-                    },
-                    dismissButton = {
-                        Button(onClick = {
-                            showModeChangeDialog = false
-                            pendingMode = null
-                            dialogInProgress = false
-                        }) { Text("Cancel") }
-                    },
-                    modifier = Modifier.fillMaxWidth(0.95f)
-                )
-            }
-            if (showModeErrorDialog != null) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = { showModeErrorDialog = null },
-                    title = { Text("Mode Selection Error") },
-                    text = { Text(showModeErrorDialog ?: "") },
-                    confirmButton = {
-                        Button(onClick = { showModeErrorDialog = null }) { Text("Close") }
-                    },
-                    dismissButton = {},
-                    modifier = Modifier.fillMaxWidth(0.95f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Statistics Cards
-            Text(
-                "Today's Statistics",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            StatisticsCard(
-                title = "Blocked Calls",
-                value = blockedCount.toString(),
-                icon = R.drawable.ic_blocked_call, // new blocked call icon
-                backgroundColor = Color(0xFFFFEBEE)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            StatisticsCard(
-                title = "Spam Prevented",
-                value = spamCount.toString(),
-                icon = R.drawable.ic_call_block, // new spam blocked icon (vector)
-                backgroundColor = Color(0xFFE8F5E9)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            StatisticsCard(
-                title = "Driving Mode Replies",
-                value = drivingReplies.toString(),
-                icon = R.drawable.ic_driving_message, // car + message
-                backgroundColor = Color(0xFFE3F2FD)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Dialer pad and contact search UI (always visible below statistics)
-            var searchQuery by remember { mutableStateOf("") }
-            var dialNumber by remember { mutableStateOf("") }
-            val filteredContacts = remember(searchQuery, deviceContactsList) {
-                val filtered = if (searchQuery.isBlank()) deviceContactsList
-                else deviceContactsList.filter {
-                    it.displayName.contains(searchQuery, ignoreCase = true) ||
-                    it.phoneNumber.contains(searchQuery, ignoreCase = true)
-                }
-                filtered.distinctBy { it.phoneNumber }
-            }
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Search Contacts", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(8.dp))
-                androidx.compose.material3.OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    label = { Text("Search by name or number") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 150.dp).fillMaxWidth()
-                ) {
-                    items(filteredContacts) { contact ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                                .background(if (dialNumber == contact.phoneNumber) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
-                                .clickable {
-                                    dialNumberAndCall(contact.phoneNumber)
-                                },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_mode_normal),
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(contact.displayName.ifEmpty { "Unknown" }, fontWeight = FontWeight.Medium)
-                                Text(contact.phoneNumber, fontSize = 13.sp, color = Color.Gray)
-                            }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = dialNumber,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    maxLines = 1
-                )
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    val dialPadRows = listOf(
-                        listOf("1", "2", "3"),
-                        listOf("4", "5", "6"),
-                        listOf("7", "8", "9"),
-                        listOf("*", "0", "#")
-                    )
-                    dialPadRows.forEach { row ->
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            row.forEach { symbol ->
-                                Button(
-                                    onClick = { dialNumber += symbol },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(4.dp)
-                                        .height(56.dp),
-                                    shape = MaterialTheme.shapes.medium,
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.surface,
-                                        contentColor = MaterialTheme.colorScheme.primary
-                                    ),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                                ) {
-                                    Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
+                // Header
+                item {
                     Row(
-                        horizontalArrangement = Arrangement.End,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        Button(
-                            onClick = { if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1) },
-                            enabled = dialNumber.isNotEmpty(),
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .height(48.dp),
-                            shape = MaterialTheme.shapes.medium,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                contentColor = MaterialTheme.colorScheme.error
-                            ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                        Text(
+                            "SmartAICallShield",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        // Switch is always enabled so user can interact
+                        Switch(
+                            checked = isAppEnabled,
+                            onCheckedChange = { checked ->
+                                if (checked && !isAppEnabled) {
+                                    showEnableDialog = true
+                                } else if (!checked && isAppEnabled) {
+                                    showDisableDialog = true
+                                }
+                            },
+                            enabled = true // Always enabled for user interaction
+                        )
+                    }
+                }
+
+                // Dialogs (Logic only, UI is triggered by state)
+                item {
+                    if (showEnableDialog) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { showEnableDialog = false },
+                            title = { Text("Enable CallShield") },
+                            text = {
+                                Text("To enable CallShield, you must confirm. Normal mode will be set by default.")
+                            },
+                            confirmButton = {
+                                Button(onClick = {
+                                    viewModel.toggleAppEnabled()
+                                    viewModel.setMode(CallMode.NORMAL)
+                                    callModesViewModel.createOrActivateMode("NORMAL")
+                                    showEnableDialog = false
+                                    SmartCallShieldApp.isCallShieldEnabled = true
+                                }) { Text("OK") }
+                            },
+                            dismissButton = {
+                                Button(onClick = { showEnableDialog = false }) { Text("Cancel") }
+                            }
+                        )
+                    }
+                    
+                    if (showDisableDialog) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { showDisableDialog = false },
+                            title = { Text("Disable CallShield") },
+                            text = {
+                                Text("You are disabling the switch. Your phone will receive ALL CALLS WITHOUT ANY CALL FILTERING, including unknown calls. Press OK to disable CallShield.")
+                            },
+                            confirmButton = {
+                                Button(onClick = {
+                                    viewModel.toggleAppEnabled()
+                                    showDisableDialog = false
+                                }) { Text("OK") }
+                            },
+                            dismissButton = {
+                                Button(onClick = { showDisableDialog = false }) { Text("Cancel") }
+                            }
+                        )
+                    }
+
+                    if (showModeChangeDialog && pendingMode != null) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = {
+                                showModeChangeDialog = false
+                                pendingMode = null
+                            },
+                            title = { Text("Change Call Mode") },
+                            text = {
+                                Text("CallShield will be applied to the selected mode. Press OK to switch mode.")
+                            },
+                            confirmButton = {
+                                Button(onClick = {
+                                    viewModel.setMode(pendingMode!!)
+                                    val modeName = when (pendingMode) {
+                                        CallMode.FAMILY -> "FAMILY"
+                                        CallMode.DRIVING -> "DRIVING"
+                                        CallMode.EMERGENCY -> "EMERGENCY"
+                                        else -> "NORMAL"
+                                    }
+                                    val modeEntity = modes.find { it.name.equals(modeName, ignoreCase = true) }
+                                    if (modeEntity != null) {
+                                        callModesViewModel.setActiveMode(modeEntity.id)
+                                    }
+                                    lastSelectedMode = pendingMode
+                                    showModeChangeDialog = false
+                                    pendingMode = null
+                                }) { Text("OK") }
+                            },
+                            dismissButton = {
+                                Button(onClick = {
+                                    showModeChangeDialog = false
+                                    pendingMode = null
+                                }) { Text("Cancel") }
+                            }
+                        )
+                    }
+                }
+
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+
+                // Premium Badge
+                if (isPremium) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFFFD700)
+                            )
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_backspace),
-                                contentDescription = "Delete",
-                                modifier = Modifier.size(24.dp)
+                            Text(
+                                "✨ Premium Features Unlocked",
+                                modifier = Modifier.padding(16.dp),
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
                             )
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
+                }
+
+                // Mode Selection
+                item {
+                    Text(
+                        "Call Mode",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    if (currentMode == null) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        ModeSelector(
+                            currentMode!!,
+                            enabled = isAppEnabled,
+                            normalEnabled = isAppEnabled,
+                            familyEnabled = isAppEnabled && enabledModes["FAMILY"] == true,
+                            drivingEnabled = isAppEnabled && enabledModes["DRIVING"] == true,
+                            emergencyEnabled = isAppEnabled && enabledModes["EMERGENCY"] == true
+                        ) { newMode ->
+                            if (!isAppEnabled) return@ModeSelector
+                            if (lastSelectedMode != newMode) {
+                                pendingMode = newMode
+                                showModeChangeDialog = true
+                            }
+                        }
+                    }
+                }
+
+                item { Spacer(modifier = Modifier.height(24.dp)) }
+
+                // SEARCH CONTACTS HEADER
+                item {
+                    Text("Search Contacts", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    androidx.compose.material3.OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Search by name or number") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // Search Results List
+                items(filteredContacts) { contact ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Button(
-                            onClick = {
-                                dialNumberAndCall(dialNumber)
+                            .padding(vertical = 4.dp)
+                            .background(if (dialNumber == contact.phoneNumber) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
+                            .clickable {
+                                dialNumberAndCall(contact.phoneNumber)
                             },
-                            enabled = dialNumber.isNotBlank(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = Color.White
-                            ),
-                            modifier = Modifier
-                                .height(56.dp)
-                                .width(120.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_call_block),
-                                contentDescription = "Dial",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Dial")
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_mode_normal),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(contact.displayName.ifEmpty { "Unknown" }, fontWeight = FontWeight.Medium)
+                            Text(contact.phoneNumber, fontSize = 13.sp, color = Color.Gray)
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+
+                // Permission Denied Dialog
+                item {
+                    if (showPermissionDeniedDialog) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { showPermissionDeniedDialog = false },
+                            title = { Text("Permission Required") },
+                            text = { Text("Please grant the CALL_PHONE permission to place calls directly from this app.") },
+                            confirmButton = {
+                                Button(onClick = { showPermissionDeniedDialog = false }) { Text("OK") }
+                            }
+                        )
+                    }
+                }
             }
 
-            // Show dialog if permission denied
-            if (showPermissionDeniedDialog) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = { showPermissionDeniedDialog = false },
-                    title = { Text("Permission Required") },
-                    text = { Text("Please grant the CALL_PHONE permission to place calls directly from this app.") },
-                    confirmButton = {
-                        Button(onClick = { showPermissionDeniedDialog = false }) { Text("OK") }
-                    },
-                    modifier = Modifier.fillMaxWidth(0.95f)
-                )
+            // Dialer pad UI (Overlay at the bottom)
+            if (showDialPad) {
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(bottom = paddingValues.calculateBottomPadding()),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = dialNumber,
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1
+                            )
+                            IconButton(onClick = { showDialPad = false }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_backspace), // Reuse backspace or add a close icon
+                                    contentDescription = "Close",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        val dialPadRows = listOf(
+                            listOf("1", "2", "3"),
+                            listOf("4", "5", "6"),
+                            listOf("7", "8", "9"),
+                            listOf("*", "0", "#")
+                        )
+                        dialPadRows.forEach { row ->
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                row.forEach { symbol ->
+                                    Button(
+                                        onClick = { dialNumber += symbol },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(4.dp)
+                                            .height(56.dp),
+                                        shape = MaterialTheme.shapes.medium,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.surface,
+                                            contentColor = MaterialTheme.colorScheme.primary
+                                        ),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                                    ) {
+                                        Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Button(
+                                onClick = { dialNumberAndCall(dialNumber) },
+                                enabled = dialNumber.isNotBlank(),
+                                modifier = Modifier.height(56.dp).width(140.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_call_block),
+                                    contentDescription = "Dial",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Dial")
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            IconButton(
+                                onClick = { if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1) }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_backspace),
+                                    contentDescription = "Delete",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -676,7 +581,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
 
 @Composable
 private fun ModeSelector(
-    currentMode: CallMode?,
+    currentMode: CallMode,
     enabled: Boolean,
     normalEnabled: Boolean = false,
     familyEnabled: Boolean = false,
@@ -720,4 +625,3 @@ private fun ModeSelector(
         )
     }
 }
-

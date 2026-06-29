@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -336,6 +337,8 @@ class AnalyticsViewModel @Inject constructor(
     private val _autoReply = MutableStateFlow(0)
     val autoReply = _autoReply.asStateFlow()
 
+    private var trendsJob: Job? = null
+
     fun setTrendFilter(filter: TrendFilter) {
         _trendFilter.value = filter
         updateTrends()
@@ -366,89 +369,82 @@ class AnalyticsViewModel @Inject constructor(
     }
 
     private fun updateTrends() {
-        viewModelScope.launch {
+        trendsJob?.cancel()
+        trendsJob = viewModelScope.launch {
             val now = System.currentTimeMillis()
-            val oneHour = 60 * 60 * 1000L
             val oneDay = 24 * 60 * 60 * 1000L
             val filter = _trendFilter.value
-            when (filter) {
+            
+            val (startTime, isOverall) = when (filter) {
                 TrendFilter.TODAY -> {
-                    val start = now - (now % oneDay)
-                    getCallHistoryUseCase.getCallsInTimeRange(start, now).collect { callLogs ->
-                        val grouped = callLogs.groupBy {
-                            java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp))
-                        }
-                        val trends = (0..23).map { h ->
-                            val hour = h.toString().padStart(2, '0')
-                            hour to (grouped[hour]?.size ?: 0)
-                        }
-                        _callTrends.value = trends
-                        updateStats(callLogs)
-                    }
+                    val calendar = java.util.Calendar.getInstance()
+                    calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                    calendar.set(java.util.Calendar.MINUTE, 0)
+                    calendar.set(java.util.Calendar.SECOND, 0)
+                    calendar.set(java.util.Calendar.MILLISECOND, 0)
+                    calendar.timeInMillis to false
                 }
                 TrendFilter.WEEK -> {
-                    val start = now - 6 * oneDay
-                    getCallHistoryUseCase.getCallsInTimeRange(start, now).collect { callLogs ->
-                        val grouped = callLogs.groupBy {
-                            java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(it.timestamp))
-                        }
-                        val trends = (0..6).map { i ->
-                            val day = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(start + i * oneDay))
-                            day to (grouped[day]?.size ?: 0)
-                        }
-                        _callTrends.value = trends
-                        updateStats(callLogs)
-                    }
+                    val calendar = java.util.Calendar.getInstance()
+                    calendar.add(java.util.Calendar.DAY_OF_YEAR, -6)
+                    calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                    calendar.set(java.util.Calendar.MINUTE, 0)
+                    calendar.set(java.util.Calendar.SECOND, 0)
+                    calendar.set(java.util.Calendar.MILLISECOND, 0)
+                    calendar.timeInMillis to false
                 }
                 TrendFilter.MONTH -> {
                     val calendar = java.util.Calendar.getInstance()
-                    val daysInMonth = calendar.getActualMaximum(java.util.Calendar.DAY_OF_MONTH)
                     calendar.set(java.util.Calendar.DAY_OF_MONTH, 1)
-                    val start = calendar.timeInMillis
-                    getCallHistoryUseCase.getCallsInTimeRange(start, now).collect { callLogs ->
-                        val grouped = callLogs.groupBy {
-                            java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(it.timestamp))
+                    calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                    calendar.set(java.util.Calendar.MINUTE, 0)
+                    calendar.set(java.util.Calendar.SECOND, 0)
+                    calendar.set(java.util.Calendar.MILLISECOND, 0)
+                    calendar.timeInMillis to false
+                }
+                TrendFilter.OVERALL -> 0L to true
+            }
+
+            val callLogsFlow = if (isOverall) getCallHistoryUseCase.getAllCallLogs() 
+                               else getCallHistoryUseCase.getCallsInTimeRange(startTime, now)
+            
+            val drivingLogsFlow = if (isOverall) getAnalyticsUseCase.getDrivingModeRepliesInTimeRange(0, now)
+                                  else getAnalyticsUseCase.getDrivingModeRepliesInTimeRange(startTime, now)
+
+            combine(callLogsFlow, drivingLogsFlow) { callLogs, drivingLogs ->
+                Pair(callLogs, drivingLogs)
+            }.collect { (callLogs, drivingLogs) ->
+                // Update Trends Chart Data
+                val grouped = when (filter) {
+                    TrendFilter.TODAY -> {
+                        val hours = callLogs.groupBy { java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp)) }
+                        (0..23).map { h -> h.toString().padStart(2, '0') to (hours[h.toString().padStart(2, '0')]?.size ?: 0) }
+                    }
+                    TrendFilter.WEEK, TrendFilter.MONTH -> {
+                        val days = callLogs.groupBy { java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(it.timestamp)) }
+                        val daysCount = if (filter == TrendFilter.WEEK) 6 else java.util.Calendar.getInstance().getActualMaximum(java.util.Calendar.DAY_OF_MONTH) - 1
+                        (0..daysCount).map { i -> 
+                            val d = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(startTime + i * oneDay))
+                            d to (days[d]?.size ?: 0)
                         }
-                        val trends = (0 until daysInMonth).map { i ->
-                            val day = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(start + i * oneDay))
-                            day to (grouped[day]?.size ?: 0)
-                        }
-                        _callTrends.value = trends
-                        updateStats(callLogs)
+                    }
+                    TrendFilter.OVERALL -> {
+                        callLogs.groupBy { java.text.SimpleDateFormat("yyyy-MM").format(java.util.Date(it.timestamp)) }
+                            .entries.sortedBy { it.key }.map { it.key to it.value.size }
                     }
                 }
-                TrendFilter.OVERALL -> {
-                    getCallHistoryUseCase.getAllCallLogs().collect { callLogs: List<CallLogEntity> ->
-                        val grouped = callLogs.groupBy { log: CallLogEntity ->
-                            java.text.SimpleDateFormat("yyyy-MM").format(java.util.Date(log.timestamp))
-                        }
-                        val trends = grouped.entries.sortedBy { entry -> entry.key }
-                            .map { entry: Map.Entry<String, List<CallLogEntity>> ->
-                                entry.key to entry.value.size
-                            }
-                        _callTrends.value = trends
-                        updateStats(callLogs)
-                    }
+                _callTrends.value = grouped
+                
+                // Update Statistics
+                val incomingCalls = callLogs.filter { it.callType == CallType.INCOMING.ordinal }
+                
+                _totalArrivals.value = incomingCalls.size
+                _answeredCalls.value = incomingCalls.count {
+                    it.duration > 0 && !it.wasBlocked
                 }
+                _blocked.value = callLogs.count { it.wasBlocked }
+                _autoReply.value = drivingLogs.size
             }
         }
-    }
-
-    private fun updateStats(callLogs: List<CallLogEntity>) {
-        _totalArrivals.value = callLogs.size
-        _answeredCalls.value = callLogs.count {
-            it.callType == CallType.INCOMING.ordinal && it.duration > 0 && !it.wasBlocked
-        }
-        _blocked.value = callLogs.count { it.wasBlocked }
-        // For auto-reply, you may need to join with DrivingModeLogEntity for accuracy.
-        // Here, we count incoming calls with duration == 0, not blocked, and in driving mode as a proxy.
-        _autoReply.value = callLogs.count {
-            it.callType == CallType.INCOMING.ordinal && it.duration == 0L && !it.wasBlocked && isDrivingModeActive()
-        }
-    }
-
-    private fun isDrivingModeActive(): Boolean {
-        // TODO: Implement actual check for driving mode if needed, or pass as parameter
-        return true // Placeholder, replace with actual logic if available
     }
 }
