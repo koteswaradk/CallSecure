@@ -157,13 +157,13 @@ private fun OverviewTab(
     Spacer(modifier = Modifier.height(24.dp))
 
     // --- Spam Reports Count ---
-    AnalyticsMetricCard(
+  /*  AnalyticsMetricCard(
         title = "Spam Reports Count",
         value = spamReportsCount.toString(),
         unit = "reports",
         backgroundColor = Color(0xFFFFF3E0),
         valueColor = Color(0xFFEF6C00)
-    )
+    )*/
 
     Spacer(modifier = Modifier.height(12.dp))
 
@@ -177,7 +177,7 @@ private fun OverviewTab(
     InsightCard(
         icon = "📊",
         title = "Peak Hours",
-        description = "Most calls occur between 2-4 PM"
+        description = "Most calls occur between 2-4PM make use of the app properly"
     )
 
     Spacer(modifier = Modifier.height(12.dp))
@@ -185,7 +185,7 @@ private fun OverviewTab(
     InsightCard(
         icon = "🚗",
         title = "Driving Mode",
-        description = "Active on average 45 minutes per day"
+        description = "Enable Driving Mode to send auto-replies while driving. Disable it once your drive is complete."
     )
 
     Spacer(modifier = Modifier.height(12.dp))
