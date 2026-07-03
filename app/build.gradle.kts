@@ -93,6 +93,7 @@ dependencies {
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.support)
     implementation(libs.play.review)
+    implementation(libs.play.services.ads)
 
     // Retrofit & OkHttp - Networking
     implementation(libs.retrofit)

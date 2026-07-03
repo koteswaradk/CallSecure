@@ -14,11 +14,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
 import dagger.hilt.android.AndroidEntryPoint
 import com.akshaglobal.smartcallshield.presentation.ui.navigation.MainNavigation
 import com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen
+import com.akshaglobal.smartcallshield.presentation.ui.screens.SplashScreen
 import com.akshaglobal.smartcallshield.presentation.ui.theme.SmartCallShieldTheme
 import com.akshaglobal.smartcallshield.service.DrivingModeService
 import com.akshaglobal.smartcallshield.service.ai.FirstLaunchTrainer
@@ -107,16 +109,22 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    if (!introShown) {
-                        IntroScreen(
-                            context = this,
-                            onFinish = {
-                                prefs.edit().putBoolean("intro_shown", true).apply()
-                                recreate()
-                            }
-                        )
+                    var showSplash by remember { mutableStateOf(true) }
+
+                    if (showSplash) {
+                        SplashScreen(onComplete = { showSplash = false })
                     } else {
-                        MainNavigation()
+                        if (!introShown) {
+                            IntroScreen(
+                                context = this,
+                                onFinish = {
+                                    prefs.edit().putBoolean("intro_shown", true).apply()
+                                    recreate()
+                                }
+                            )
+                        } else {
+                            MainNavigation()
+                        }
                     }
                 }
             }

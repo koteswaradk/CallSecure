@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.provider.CallLog
 import android.util.Log
+import com.google.android.gms.ads.MobileAds
 import dagger.hilt.android.HiltAndroidApp
 import com.akshaglobal.smartcallshield.service.TFLiteSpamDetector
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,9 @@ class SmartCallShieldApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Initialize Mobile Ads SDK
+        MobileAds.initialize(this) {}
+
         // Initialize app-level components
         runSpamDetectionOnCallHistory()
     }
