@@ -92,6 +92,7 @@ dependencies {
     // TensorFlow Lite - ML
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.support)
+    implementation(libs.play.review)
 
     // Retrofit & OkHttp - Networking
     implementation(libs.retrofit)
