@@ -1,80 +1,80 @@
-# SmartCallShield ProGuard Configuration
-# Preserve line numbers for debugging
--keepattributes SourceFile,LineNumberTable
+# SmartCallShield R8/ProGuard Configuration
+
+# Preservation for debugging
+-keepattributes SourceFile,LineNumberTable,Signature,InnerClasses,EnclosingMethod,*Annotation*
 -renamesourcefileattribute SourceFile
 
--dontpreverify
--repackageclasses
+# Kotlin Coroutines
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keepnames class kotlinx.coroutines.android.AndroidDispatcherFactory {}
+-keep class kotlinx.coroutines.android.AndroidExceptionPreHandler { <init>(...); }
+-keep class kotlinx.coroutines.internal.DiagnosticCoroutineContextException { <init>(...); }
+-dontwarn kotlinx.coroutines.**
 
-# Kotlin
--keep class kotlin.** { *; }
--keep class kotlinx.** { *; }
--dontwarn kotlin.**
--dontwarn kotlinx.**
+# Hilt / Dagger
+-keep class dagger.hilt.** { *; }
+-keep interface dagger.hilt.** { *; }
+-keep @dagger.hilt.android.AndroidEntryPoint class * { *; }
+-keep class * implements dagger.hilt.internal.GeneratedComponent { *; }
+-keep class * implements dagger.hilt.internal.UnsafeCasts { *; }
 
-# AndroidX & Jetpack
--keep class androidx.** { *; }
--dontwarn androidx.**
-
-# Room Database
+# Room
 -keep class * extends androidx.room.RoomDatabase { *; }
 -keep @androidx.room.Entity class * { *; }
 -keep @androidx.room.Dao class * { *; }
--keepclassmembers class * extends androidx.room.RoomDatabase {
-    public static ** getDatabase(...);
-}
+-keep class androidx.room.RoomMasterTable { *; }
+-dontwarn androidx.room.**
 
-# DataStore
--keep class androidx.datastore.** { *; }
-
-# Hilt Dependency Injection
--keep class dagger.hilt.** { *; }
--keep @dagger.hilt.android.AndroidEntryPoint class * { *; }
--keep class com.akshaglobal.smartcallshield.di.** { *; }
-
-# Domain Models and DTOs
--keep class com.akshaglobal.smartcallshield.data.model.** { *; }
--keep class com.akshaglobal.smartcallshield.domain.model.** { *; }
-
-# Serializable classes
--keep class * implements java.io.Serializable { *; }
-
-# TensorFlow Lite
--keep class org.tensorflow.** { *; }
--dontwarn org.tensorflow.**
-
-# Retrofit & GSON
--keepattributes Signature
--keepattributes *Annotation*
+# Retrofit / OkHttp
 -keep class retrofit2.** { *; }
 -keep interface retrofit2.** { *; }
--keep class com.google.gson.** { *; }
--dontwarn retrofit2.**
--dontwarn com.google.gson.**
-
-# OkHttp
 -keep class okhttp3.** { *; }
 -keep interface okhttp3.** { *; }
+-dontwarn retrofit2.**
 -dontwarn okhttp3.**
+-dontwarn javax.annotation.**
 
-# WorkManager
--keep class androidx.work.** { *; }
--keep @androidx.work.WorkerInject class * { *; }
+# GSON
+-keep class com.google.gson.** { *; }
+-keep @com.google.gson.annotations.SerializedName class * { *; }
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
 
-# Coroutines
--keep class kotlinx.coroutines.** { *; }
--dontwarn kotlinx.coroutines.**
+# TensorFlow Lite
+-keep class org.tensorflow.lite.** { *; }
+-dontwarn org.tensorflow.lite.**
 
-# Application classes
--keep class com.akshaglobal.smartcallshield.** { *; }
--keepclassmembers class com.akshaglobal.smartcallshield.** { *; }
+# Google Play Services / AdMob
+-keep class com.google.android.gms.ads.** { *; }
+-keep interface com.google.android.gms.ads.** { *; }
+-keep class com.google.android.gms.internal.** { *; }
+-keep class com.google.android.gms.dynamite.** { *; }
+-dontwarn com.google.android.gms.**
 
-# Preserve R classes
+# App Specific Data Models
+-keep class com.akshaglobal.smartcallshield.data.model.** { *; }
+
+# General Android
 -keepclassmembers class **.R$* {
     public static <fields>;
 }
 
-# Native methods
+# Keep Compose internal classes
+-keep class androidx.compose.runtime.Recomposer { *; }
+-dontwarn androidx.compose.**
+
+# Prevent shrinking of native method classes
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# Apache POI / Log4j (Missing classes in Android environment)
+-dontwarn org.apache.poi.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn aQute.bnd.annotation.spi.**
+-dontwarn org.apache.batik.**
+-dontwarn org.osgi.framework.**
+-dontwarn javax.xml.stream.**
+-dontwarn com.sun.xml.internal.stream.**
