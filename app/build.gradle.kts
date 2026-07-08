@@ -19,6 +19,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        ndk {
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
+        }
     }
 
     buildTypes {
@@ -33,6 +37,7 @@ android {
             
             ndk {
                 debugSymbolLevel = "FULL"
+                abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
             }
         }
     }
@@ -51,6 +56,18 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = false
+            excludes += setOf(
+                "lib/armeabi/**",
+                "lib/mips/**",
+                "lib/mips64/**",
+                "lib/arm64-v8a/libc++_shared.so"
+            )
+        }
+        resources {
+            excludes += setOf(
+                "META-INF/proguard/androidx-*.pro",
+                "META-INF/MANIFEST.MF"
+            )
         }
     }
     
