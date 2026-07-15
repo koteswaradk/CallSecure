@@ -49,7 +49,7 @@ fun MainNavigation() {
     Scaffold(
         bottomBar = {
             Column {
-                BannerAdView()
+                BannerAdView(isCollapsible = true)
                 NavigationBar {
                     val items = listOf(
                         Screen.Dashboard,

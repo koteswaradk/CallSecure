@@ -15,17 +15,22 @@ android {
         applicationId = "com.akshaglobal.smartcallshield"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         ndk {
-            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
         }
     }
 
     buildTypes {
+        debug {
+            ndk {
+                abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
+            }
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -37,7 +42,7 @@ android {
             
             ndk {
                 debugSymbolLevel = "FULL"
-                abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
+                abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
             }
         }
     }
@@ -74,6 +79,12 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            force("org.tensorflow:tensorflow-lite:2.17.0")
+        }
     }
 }
 
@@ -114,7 +125,9 @@ dependencies {
 
     // TensorFlow Lite - ML
     implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.support)
+    implementation(libs.tensorflow.lite.support) {
+        exclude(group = "org.tensorflow", module = "tensorflow-lite-api")
+    }
     implementation(libs.play.review)
     implementation(libs.play.services.ads)
 
