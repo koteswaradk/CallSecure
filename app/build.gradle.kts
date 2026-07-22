@@ -9,12 +9,13 @@ plugins {
 
 android {
     namespace = "com.akshaglobal.smartcallshield"
-    compileSdk = 36
+    compileSdk = 37
+    buildToolsVersion = "37.0.0"
 
     defaultConfig {
         applicationId = "com.akshaglobal.smartcallshield"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 3
         versionName = "1.2"
 
