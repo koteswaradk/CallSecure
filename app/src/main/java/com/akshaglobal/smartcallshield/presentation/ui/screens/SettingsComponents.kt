@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
@@ -123,6 +124,10 @@ fun CreateModeAlertDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        ),
         title = {
             Text("Create & Manage Call Modes", fontWeight = FontWeight.Bold)
         },
@@ -130,7 +135,8 @@ fun CreateModeAlertDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                    .imePadding()
+                    .padding(horizontal = 16.dp)
             ) {
                 // Mode Selection Dropdown
                 Text(
@@ -166,13 +172,13 @@ fun CreateModeAlertDialog(
                     }
                 }
 
-                // Search Bar
+                // Search Bar and List
                 if (selectedMode != null) {
                     Text(
                         "Search Contacts",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)
+                        modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
                     )
 
                     TextField(
@@ -181,7 +187,7 @@ fun CreateModeAlertDialog(
                         label = { Text("Search by name or number") },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 16.dp),
+                            .padding(bottom = 8.dp),
                         singleLine = true
                     )
 
@@ -190,13 +196,14 @@ fun CreateModeAlertDialog(
                         "Select Contacts (${selectedContacts.size} selected)",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
 
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 300.dp)
+                            .weight(1f, fill = false)
+                            .heightIn(max = 250.dp)
                     ) {
                         items(filteredContacts) { contact ->
                             Row(
