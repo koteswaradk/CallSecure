@@ -139,7 +139,7 @@ private fun ContactsList(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("No contacts found", fontSize = 16.sp, color = Color.Gray)
+            Text("No contacts found", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     } else {
         LazyColumn(modifier = Modifier.padding(8.dp)) {
@@ -164,7 +164,7 @@ private fun AddContactDialog(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f))
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -207,7 +207,7 @@ private fun AddContactDialog(
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (category == cat)
                                     MaterialTheme.colorScheme.primary
-                                else Color.LightGray
+                                else MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
                             Text(cat, fontSize = 12.sp)

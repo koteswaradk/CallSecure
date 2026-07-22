@@ -213,7 +213,7 @@ private fun PresetModeCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -224,7 +224,7 @@ private fun PresetModeCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(modeName, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text(description, fontSize = 12.sp, color = Color.Gray)
+                Text(description, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Button(onClick = onSelect) {
                 Text("Create")
@@ -296,7 +296,7 @@ private fun ContactSelectionCard(
             .fillMaxWidth()
             .padding(4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.White
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
@@ -308,7 +308,7 @@ private fun ContactSelectionCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(contact.displayName, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Text(contact.phoneNumber, fontSize = 12.sp, color = Color.Gray)
+                Text(contact.phoneNumber, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Checkbox(
                 checked = isSelected,
@@ -355,7 +355,7 @@ private fun CreateModeDialog(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(contact.displayName, fontSize = 12.sp)
-                                Text(contact.phoneNumber, fontSize = 10.sp, color = Color.Gray)
+                                Text(contact.phoneNumber, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Checkbox(
                                 checked = selectedContacts.contains(contact.phoneNumber),

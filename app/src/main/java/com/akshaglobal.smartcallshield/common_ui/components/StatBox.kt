@@ -27,8 +27,8 @@ fun StatBox(label: String, value: Int, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(label, fontSize = 10.sp, color = Color.Gray)
-            Text(value.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(label, fontSize = 10.sp, color = Color.Blue)
+            Text(value.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold,color = Color.Black)
         }
     }
 }

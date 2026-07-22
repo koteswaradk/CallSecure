@@ -3,6 +3,7 @@ package com.akshaglobal.smartcallshield.presentation.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,11 +35,11 @@ fun AnalyticsMetricCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(title, fontSize = 14.sp, color = Color.Gray)
+                Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(value, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = valueColor)
                     Spacer(modifier = Modifier.padding(4.dp))
-                    Text(unit, fontSize = 12.sp, color = Color.Gray)
+                    Text(unit, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

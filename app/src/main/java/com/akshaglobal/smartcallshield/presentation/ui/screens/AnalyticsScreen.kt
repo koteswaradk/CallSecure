@@ -1,7 +1,6 @@
 package com.akshaglobal.smartcallshield.presentation.ui.screens
 
 import android.content.Context
-import android.graphics.Color as AndroidColor
 import android.view.ViewGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +41,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.toColorInt
+import androidx.compose.ui.graphics.toArgb
 import com.akshaglobal.smartcallshield.presentation.ui.components.AnalyticsMetricCard
 import com.akshaglobal.smartcallshield.common_ui.components.InsightCard
 import com.akshaglobal.smartcallshield.common_ui.components.StatBox
@@ -130,8 +130,8 @@ private fun OverviewTab(
         title = "Total Blocked Calls",
         value = blockedCalls.toString(),
         unit = "calls",
-        backgroundColor = Color(0xFFFFEBEE),
-        valueColor = Color(0xFFC62828)
+        backgroundColor = MaterialTheme.colorScheme.errorContainer,
+        valueColor = MaterialTheme.colorScheme.onErrorContainer
     )
 
     Spacer(modifier = Modifier.height(12.dp))
@@ -140,8 +140,8 @@ private fun OverviewTab(
         title = "Spam Calls Prevented",
         value = spamCallsPrevented.toString(),
         unit = "calls",
-        backgroundColor = Color(0xFFE8F5E9),
-        valueColor = Color(0xFF2E7D32)
+        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+        valueColor = MaterialTheme.colorScheme.onPrimaryContainer
     )
 
     Spacer(modifier = Modifier.height(12.dp))
@@ -150,8 +150,8 @@ private fun OverviewTab(
         title = "Driving Mode Auto-Replies",
         value = drivingRepliesSent.toString(),
         unit = "replies",
-        backgroundColor = Color(0xFFE3F2FD),
-        valueColor = Color(0xFF1565C0)
+        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+        valueColor = MaterialTheme.colorScheme.onSecondaryContainer
     )
 
     Spacer(modifier = Modifier.height(24.dp))
@@ -248,6 +248,11 @@ private fun TrendsTab(viewModel: AnalyticsViewModel) {
 // --- MPAndroidChart Integration ---
 @Composable
 private fun MPAndroidChartTrendsGraph(callTrends: List<Pair<String, Int>>) {
+    val surfaceColor = MaterialTheme.colorScheme.surface.toArgb()
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface.toArgb()
+    val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
+    val primaryAlphaColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f).toArgb()
+
     AndroidView(
         factory = { ctx: Context ->
             LineChart(ctx).apply {
@@ -255,12 +260,12 @@ private fun MPAndroidChartTrendsGraph(callTrends: List<Pair<String, Int>>) {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     400 // px, will be scaled by Compose
                 )
-                setBackgroundColor(AndroidColor.WHITE)
+                setBackgroundColor(surfaceColor)
                 description.isEnabled = false
                 axisRight.isEnabled = false
-                axisLeft.textColor = AndroidColor.DKGRAY
+                axisLeft.textColor = onSurfaceColor
                 xAxis.position = XAxis.XAxisPosition.BOTTOM
-                xAxis.textColor = AndroidColor.DKGRAY
+                xAxis.textColor = onSurfaceColor
                 xAxis.setDrawGridLines(false)
                 legend.isEnabled = false
             }
@@ -270,23 +275,26 @@ private fun MPAndroidChartTrendsGraph(callTrends: List<Pair<String, Int>>) {
                 Entry(idx.toFloat(), pair.second.toFloat())
             }
             val dataSet = LineDataSet(entries, "Calls").apply {
-                color = "#1976D2".toColorInt()
-                setCircleColor("#1976D2".toColorInt())
+                color = primaryColor
+                setCircleColor(primaryColor)
                 lineWidth = 2f
                 circleRadius = 4f
                 setDrawValues(false)
                 setDrawFilled(true)
-                fillColor = "#BBDEFB".toColorInt()
+                fillColor = primaryAlphaColor
             }
             chart.data = LineData(dataSet)
             chart.xAxis.valueFormatter = IndexAxisValueFormatter(callTrends.map { it.first })
             chart.xAxis.labelRotationAngle = -45f
+            chart.xAxis.textColor = onSurfaceColor
+            chart.axisLeft.textColor = onSurfaceColor
+            chart.setBackgroundColor(surfaceColor)
             chart.invalidate()
         },
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(8.dp)
     )
 }

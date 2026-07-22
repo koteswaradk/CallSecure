@@ -213,7 +213,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                         }
                         context.startActivity(intent)
                     }
-                }) { Text("Cancel") }
+                }) { Text("Dial") }
             },
             modifier = Modifier.fillMaxWidth(0.95f)
         )
@@ -225,7 +225,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
             FloatingActionButton(
                 onClick = { showDialPad = !showDialPad },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_call_block), // Using existing dial-like icon
@@ -455,7 +455,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(contact.displayName.ifEmpty { "Unknown" }, fontWeight = FontWeight.Medium)
-                            Text(contact.phoneNumber, fontSize = 13.sp, color = Color.Gray)
+                            Text(contact.phoneNumber, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

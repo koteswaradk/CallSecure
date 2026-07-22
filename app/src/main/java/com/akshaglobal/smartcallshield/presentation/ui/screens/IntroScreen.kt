@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -109,7 +108,7 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
                             .padding(4.dp)
                             .size(if (i == currentPage) 14.dp else 8.dp)
                             .clip(CircleShape)
-                            .background(if (i == currentPage) MaterialTheme.colorScheme.primary else Color.LightGray)
+                            .background(if (i == currentPage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                     )
                 }
             }

@@ -41,7 +41,7 @@ fun CallModeManagementCard() {
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -52,7 +52,7 @@ fun CallModeManagementCard() {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Create & Manage Modes", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text("Setup Normal, Family, Driving, Emergency modes", fontSize = 12.sp, color = Color.Gray)
+                Text("Setup Normal, Family, Driving, Emergency modes", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Button(
                 onClick = { showModeDialog = true },
@@ -222,7 +222,7 @@ fun CreateModeAlertDialog(
                                     Text(
                                         contact.phoneNumber,
                                         fontSize = 12.sp,
-                                        color = Color.Gray
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 Checkbox(

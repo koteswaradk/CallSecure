@@ -24,6 +24,7 @@ import com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.SplashScreen
 import com.akshaglobal.smartcallshield.presentation.ui.theme.SmartCallShieldTheme
 import com.akshaglobal.smartcallshield.service.DrivingModeService
+import com.akshaglobal.smartcallshield.data.model.AppTheme
 import com.akshaglobal.smartcallshield.service.ai.FirstLaunchTrainer
 import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
 import kotlinx.coroutines.CoroutineScope
@@ -106,7 +107,16 @@ class MainActivity : ComponentActivity() {
         val introShown = prefs.getBoolean("intro_shown", false)
 
         setContent {
-            SmartCallShieldTheme {
+            val appTheme by preferencesManager.appTheme.collectAsState(initial = AppTheme.SYSTEM)
+            val isSystemInDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+            
+            val useDarkTheme = when (appTheme) {
+                AppTheme.LIGHT -> false
+                AppTheme.DARK -> true
+                AppTheme.SYSTEM -> isSystemInDarkTheme
+            }
+
+            SmartCallShieldTheme(darkTheme = useDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

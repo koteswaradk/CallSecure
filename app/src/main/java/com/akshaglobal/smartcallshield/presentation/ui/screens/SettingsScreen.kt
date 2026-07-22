@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -61,6 +62,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.akshaglobal.smartcallshield.presentation.viewmodel.SettingsViewModel
 import com.akshaglobal.smartcallshield.presentation.viewmodel.CallModesViewModel
+import com.akshaglobal.smartcallshield.data.model.AppTheme
 import com.google.accompanist.permissions.isGranted
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
@@ -84,6 +86,7 @@ fun SettingsScreen(
     val drivingModeAutoReply by viewModel.drivingModeAutoReply.collectAsState()
     val spamConfidenceThreshold by viewModel.spamConfidenceThreshold.collectAsState()
     val autoRejectSpam by viewModel.autoRejectSpam.collectAsState()
+    val appTheme by viewModel.appTheme.collectAsState()
     val context = LocalContext.current
     val enabledModesState = callModesViewModel.enabledModes.collectAsState()
     val enabledModes = enabledModesState.value
@@ -121,6 +124,15 @@ fun SettingsScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
+
+        // Appearance Section
+        SettingsSectionHeader("Appearance")
+        ThemeSelectionCard(
+            currentTheme = appTheme,
+            onThemeSelected = { viewModel.setAppTheme(it) }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Spam Detection Section
         SettingsSectionHeader("Spam Detection")
@@ -192,7 +204,7 @@ fun SettingsScreen(
         if (drivingModeEnabled) {
             Text(
                 "Disable Driving Mode to edit the auto-reply message.",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
             )
@@ -260,7 +272,7 @@ fun SettingsScreen(
                 Text(
                     text = stringResource(id = R.string.about_version, "1.0"),
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -378,6 +390,75 @@ fun SettingsScreen(
 }
 
 @Composable
+fun ThemeSelectionCard(
+    currentTheme: AppTheme,
+    onThemeSelected: (AppTheme) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("App Theme", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Choose how SmartCallShield looks to you", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                ThemeOptionButton(
+                    label = "Light",
+                    isSelected = currentTheme == AppTheme.LIGHT,
+                    onClick = { onThemeSelected(AppTheme.LIGHT) },
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                ThemeOptionButton(
+                    label = "Dark",
+                    isSelected = currentTheme == AppTheme.DARK,
+                    onClick = { onThemeSelected(AppTheme.DARK) },
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                ThemeOptionButton(
+                    label = "System",
+                    isSelected = currentTheme == AppTheme.SYSTEM,
+                    onClick = { onThemeSelected(AppTheme.SYSTEM) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemeOptionButton(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = modifier.height(40.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp)
+    ) {
+        Text(label, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+    }
+}
+
+@Composable
 fun LegalItemCard(
     title: String,
     description: String,
@@ -388,7 +469,7 @@ fun LegalItemCard(
             .fillMaxWidth()
             .padding(8.dp)
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -399,7 +480,7 @@ fun LegalItemCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text(description, fontSize = 12.sp, color = Color.Gray)
+                Text(description, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,

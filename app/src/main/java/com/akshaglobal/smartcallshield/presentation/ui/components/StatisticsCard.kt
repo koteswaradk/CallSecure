@@ -36,7 +36,7 @@ fun StatisticsCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(title, fontSize = 14.sp, color = Color.Gray)
+                Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             Icon(

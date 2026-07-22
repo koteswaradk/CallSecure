@@ -3,6 +3,7 @@ package com.akshaglobal.smartcallshield.common_ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +26,7 @@ fun SettingCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -36,7 +37,7 @@ fun SettingCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text(description, fontSize = 12.sp, color = Color.Gray)
+                Text(description, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Switch(
                 checked = isEnabled,

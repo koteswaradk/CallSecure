@@ -30,7 +30,7 @@ fun ModeButton(
             .padding(4.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
@@ -43,7 +43,7 @@ fun ModeButton(
                 modifier = Modifier
                     .width(36.dp)
                     .height(36.dp),
-                tint = if (isSelected && enabled) Color.Unspecified else Color.White
+                tint = if (isSelected && enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
