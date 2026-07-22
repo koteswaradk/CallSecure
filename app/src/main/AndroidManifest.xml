@@ -20,8 +20,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Location for driving detection (optional) -->
-    <!--<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />-->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <!-- Internet for cloud sync and analytics -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -44,7 +44,7 @@
 
     <application
         android:name=".SmartCallShieldApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:extractNativeLibs="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
