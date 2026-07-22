@@ -123,9 +123,8 @@ class CallInterceptor : BroadcastReceiver() {
                         // Wait for 5 seconds
                         delay(5000)
                         
-                        // Check if the phone is still ringing and it's the same number
-                        // (User might have answered or caller might have hung up)
-                        if (isCurrentlyRinging && currentRingingNumber == e164Number) {
+                        // Ensure it's the same number that triggered the event
+                        if (currentRingingNumber == e164Number) {
                             val replyMessage = preferencesManager.drivingModeAutoReply.first()
                             
                             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.SEND_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -148,7 +147,7 @@ class CallInterceptor : BroadcastReceiver() {
                             }
                             rejectCall(context)
                         } else {
-                            Log.d(TAG, "Call from $phoneNumber no longer ringing or changed state, skipping auto-reply.")
+                            Log.d(TAG, "Number changed or was cleared before delay finished, skipping auto-reply.")
                         }
                     }
                     CallDecision.ALLOW -> {

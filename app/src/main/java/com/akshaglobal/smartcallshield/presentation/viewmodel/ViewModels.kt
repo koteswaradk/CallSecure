@@ -19,10 +19,12 @@ import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 import com.akshaglobal.smartcallshield.data.repository.AnalyticsRepository
 import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
 import com.akshaglobal.smartcallshield.data.repository.ContactRepository
+import com.akshaglobal.smartcallshield.data.repository.ModeRepository
 import com.akshaglobal.smartcallshield.domain.usecase.GetAnalyticsUseCase
 import com.akshaglobal.smartcallshield.domain.usecase.ManageContactsUseCase
 import com.akshaglobal.smartcallshield.domain.usecase.GetCallHistoryUseCase
 import com.akshaglobal.smartcallshield.data.model.CallType
+import kotlinx.coroutines.flow.first
 
 enum class TrendFilter { TODAY, WEEK, MONTH, OVERALL }
 
@@ -30,7 +32,8 @@ enum class TrendFilter { TODAY, WEEK, MONTH, OVERALL }
 class DashboardViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val analyticsRepository: AnalyticsRepository,
-    private val getAnalyticsUseCase: GetAnalyticsUseCase
+    private val getAnalyticsUseCase: GetAnalyticsUseCase,
+    private val modeRepository: ModeRepository
 ) : ViewModel() {
 
     private val _currentMode = MutableStateFlow<CallMode?>(null)
@@ -120,14 +123,11 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.setCurrentMode(mode.name)
             _currentMode.value = mode
-            // Enable driving mode in preferences if DRIVING is selected, disable otherwise
-            if (mode == CallMode.DRIVING) {
-                preferencesManager.setDrivingModeEnabled(true)
-                _drivingModeEnabled.value = true
-            } else {
-                preferencesManager.setDrivingModeEnabled(false)
-                _drivingModeEnabled.value = false
-            }
+            
+            // Sync with mode repository
+            val allModes = modeRepository.getAllModes().first()
+            val modeToActivate = allModes.find { it.name.equals(mode.name, ignoreCase = true) }
+            modeToActivate?.let { modeRepository.setActiveMode(it.id) }
         }
     }
 
@@ -225,17 +225,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             contactRepository.getContactsByCategory("DRIVING").collect { contacts ->
                 _hasDrivingContacts.value = contacts.isNotEmpty()
-                // Only allow enabling driving mode if there are driving contacts
-                if (!contacts.isNotEmpty()) {
-                    _drivingModeEnabled.value = false
-                    preferencesManager.setDrivingModeEnabled(false)
-                }
             }
         }
         viewModelScope.launch {
             preferencesManager.drivingModeEnabled.collect { enabled ->
-                // Only allow enabling if there are driving contacts
-                _drivingModeEnabled.value = enabled && _hasDrivingContacts.value
+                _drivingModeEnabled.value = enabled
             }
         }
         viewModelScope.launch {

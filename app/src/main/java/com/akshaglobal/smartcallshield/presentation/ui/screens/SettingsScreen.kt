@@ -165,7 +165,7 @@ fun SettingsScreen(
             title = "Enable Driving Mode",
             description = "Automatically handle calls while driving",
             isEnabled = drivingModeEnabled,
-            onToggle = { !drivingModeEnabled },
+            onToggle = { viewModel.setDrivingModeEnabled(it) },
             enabled = isAppEnabled && isDrivingModeValid // Enable only if app is enabled AND Driving mode has contacts
         )
 

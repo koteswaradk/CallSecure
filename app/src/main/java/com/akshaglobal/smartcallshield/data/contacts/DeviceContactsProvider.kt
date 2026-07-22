@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.provider.ContactsContract
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.akshaglobal.smartcallshield.data.model.DeviceContact
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,6 +14,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 @Singleton
 class DeviceContactsProvider @Inject constructor(@ApplicationContext private val context: Context) {
     fun fetchDeviceContacts(): List<DeviceContact> {
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Log.w("DeviceContactsProvider", "READ_CONTACTS permission not granted. Returning empty list.")
+            return emptyList()
+        }
+
         val contacts = mutableListOf<DeviceContact>()
         val resolver: ContentResolver = context.contentResolver
         val contactsMap = mutableMapOf<String, DeviceContact>()
