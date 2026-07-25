@@ -9,6 +9,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.ui.text.style.TextOverflow
+
 @Composable
 fun SettingsSectionHeader(title: String) {
     Text(
@@ -16,6 +18,8 @@ fun SettingsSectionHeader(title: String) {
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
         modifier = Modifier
             .padding(vertical = 12.dp)
             .padding(start = 8.dp)

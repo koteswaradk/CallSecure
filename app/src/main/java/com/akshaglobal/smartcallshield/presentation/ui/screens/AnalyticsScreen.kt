@@ -27,9 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import com.akshaglobal.smartcallshield.presentation.viewmodel.AnalyticsViewModel
 import com.akshaglobal.smartcallshield.presentation.viewmodel.TrendFilter
 import com.akshaglobal.smartcallshield.presentation.viewmodel.SpamReportViewModel
@@ -48,6 +51,7 @@ import com.akshaglobal.smartcallshield.common_ui.components.StatBox
 
 @Composable
 fun AnalyticsScreen(
+    windowSizeClass: WindowSizeClass,
     viewModel: AnalyticsViewModel = hiltViewModel(),
     spamReportViewModel: SpamReportViewModel = hiltViewModel()
 ) {
@@ -75,6 +79,8 @@ fun AnalyticsScreen(
             "Analytics Dashboard",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(16.dp)
         )
 
@@ -106,7 +112,7 @@ fun AnalyticsScreen(
                     drivingRepliesSent,
                     spamReportsCount = spamReportsCount
                 )
-                1 -> TrendsTab(viewModel)
+                1 -> TrendsTab(viewModel, windowSizeClass)
             }
         }
     }
@@ -198,7 +204,7 @@ private fun OverviewTab(
 }
 
 @Composable
-private fun TrendsTab(viewModel: AnalyticsViewModel) {
+private fun TrendsTab(viewModel: AnalyticsViewModel, windowSizeClass: WindowSizeClass) {
     val callTrends by viewModel.callTrends.collectAsState()
     val trendFilter by viewModel.trendFilter.collectAsState()
     val totalArrivals by viewModel.totalArrivals.collectAsState()
@@ -232,13 +238,26 @@ private fun TrendsTab(viewModel: AnalyticsViewModel) {
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
-        // Real-time statistics
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            StatBox("Total Arrival", totalArrivals, Modifier.weight(1f))
-            StatBox("Answered", answeredCalls, Modifier.weight(1f))
-            StatBox("Blocked", blocked, Modifier.weight(1f))
-            StatBox("Auto-Reply", autoReply, Modifier.weight(1f))
+        
+        // Adaptive Statistics Grid
+        if (windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                StatBox("Total Arrival", totalArrivals, Modifier.weight(1f))
+                StatBox("Answered", answeredCalls, Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                StatBox("Blocked", blocked, Modifier.weight(1f))
+                StatBox("Auto-Reply", autoReply, Modifier.weight(1f))
+            }
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                StatBox("Total Arrival", totalArrivals, Modifier.weight(1f))
+                StatBox("Answered", answeredCalls, Modifier.weight(1f))
+                StatBox("Blocked", blocked, Modifier.weight(1f))
+                StatBox("Auto-Reply", autoReply, Modifier.weight(1f))
+            }
         }
+        
         Spacer(modifier = Modifier.height(12.dp))
         // Call trends graph (MPAndroidChart integration)
         MPAndroidChartTrendsGraph(callTrends)

@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.akshaglobal.smartcallshield.R
@@ -63,11 +64,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.core.net.toUri
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import com.akshaglobal.smartcallshield.presentation.ui.components.ModeButton
 import com.akshaglobal.smartcallshield.presentation.ui.components.StatisticsCard
 
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesViewModel: CallModesViewModel = hiltViewModel()) {
+fun DashboardScreen(
+    windowSizeClass: WindowSizeClass,
+    viewModel: DashboardViewModel = hiltViewModel(),
+    callModesViewModel: CallModesViewModel = hiltViewModel()
+) {
     // Add this state to remember the last dialed number for fallback
     var lastDialAttemptedNumber by remember { mutableStateOf("") }
     val currentMode by viewModel.currentMode.collectAsState()
@@ -269,7 +276,10 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                             "SmartAICallShield",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
                         )
                         // Switch is always enabled so user can interact
                         Switch(
@@ -414,6 +424,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                     } else {
                         ModeSelector(
                             currentMode!!,
+                            windowSizeClass = windowSizeClass,
                             enabled = isAppEnabled,
                             normalEnabled = isAppEnabled,
                             familyEnabled = isAppEnabled && enabledModes["FAMILY"] == true,
@@ -604,6 +615,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
 @Composable
 private fun ModeSelector(
     currentMode: CallMode,
+    windowSizeClass: WindowSizeClass,
     enabled: Boolean,
     normalEnabled: Boolean = false,
     familyEnabled: Boolean = false,
@@ -611,43 +623,89 @@ private fun ModeSelector(
     emergencyEnabled: Boolean = false,
     onModeSelected: (CallMode) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        ModeButton(
-            label = "Normal",
-            iconRes = R.drawable.ic_mode_normal,
-            isSelected = currentMode == CallMode.NORMAL,
-            enabled = enabled && normalEnabled,
-            selectedColor = MaterialTheme.colorScheme.primary,
-            onClick = { onModeSelected(CallMode.NORMAL) }
-        )
-        ModeButton(
-            label = "Family",
-            iconRes = R.drawable.ic_mode_family,
-            isSelected = currentMode == CallMode.FAMILY,
-            enabled = enabled && familyEnabled,
-            selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.PranixGreen,
-            onClick = { onModeSelected(CallMode.FAMILY) }
-        )
-        ModeButton(
-            label = "Driving",
-            iconRes = R.drawable.ic_mode_driving,
-            isSelected = currentMode == CallMode.DRIVING,
-            enabled = enabled && drivingEnabled,
-            selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.Warning,
-            onClick = { onModeSelected(CallMode.DRIVING) }
-        )
-        ModeButton(
-            label = "Emergency",
-            iconRes = R.drawable.ic_mode_emergency,
-            isSelected = currentMode == CallMode.EMERGENCY,
-            enabled = enabled && emergencyEnabled,
-            selectedColor = MaterialTheme.colorScheme.error,
-            onClick = { onModeSelected(CallMode.EMERGENCY) }
-        )
+    val isCompact = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
+    
+    if (isCompact) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            ModeButton(
+                label = "Normal",
+                iconRes = R.drawable.ic_mode_normal,
+                isSelected = currentMode == CallMode.NORMAL,
+                enabled = enabled && normalEnabled,
+                selectedColor = MaterialTheme.colorScheme.primary,
+                onClick = { onModeSelected(CallMode.NORMAL) }
+            )
+            ModeButton(
+                label = "Family",
+                iconRes = R.drawable.ic_mode_family,
+                isSelected = currentMode == CallMode.FAMILY,
+                enabled = enabled && familyEnabled,
+                selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.PranixGreen,
+                onClick = { onModeSelected(CallMode.FAMILY) }
+            )
+            ModeButton(
+                label = "Driving",
+                iconRes = R.drawable.ic_mode_driving,
+                isSelected = currentMode == CallMode.DRIVING,
+                enabled = enabled && drivingEnabled,
+                selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.Warning,
+                onClick = { onModeSelected(CallMode.DRIVING) }
+            )
+            ModeButton(
+                label = "Emergency",
+                iconRes = R.drawable.ic_mode_emergency,
+                isSelected = currentMode == CallMode.EMERGENCY,
+                enabled = enabled && emergencyEnabled,
+                selectedColor = MaterialTheme.colorScheme.error,
+                onClick = { onModeSelected(CallMode.EMERGENCY) }
+            )
+        }
+    } else {
+        // Grid for wider screens
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                ModeButton(
+                    label = "Normal",
+                    iconRes = R.drawable.ic_mode_normal,
+                    isSelected = currentMode == CallMode.NORMAL,
+                    enabled = enabled && normalEnabled,
+                    selectedColor = MaterialTheme.colorScheme.primary,
+                    onClick = { onModeSelected(CallMode.NORMAL) }
+                )
+                Spacer(Modifier.width(16.dp))
+                ModeButton(
+                    label = "Family",
+                    iconRes = R.drawable.ic_mode_family,
+                    isSelected = currentMode == CallMode.FAMILY,
+                    enabled = enabled && familyEnabled,
+                    selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.PranixGreen,
+                    onClick = { onModeSelected(CallMode.FAMILY) }
+                )
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                ModeButton(
+                    label = "Driving",
+                    iconRes = R.drawable.ic_mode_driving,
+                    isSelected = currentMode == CallMode.DRIVING,
+                    enabled = enabled && drivingEnabled,
+                    selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.Warning,
+                    onClick = { onModeSelected(CallMode.DRIVING) }
+                )
+                Spacer(Modifier.width(16.dp))
+                ModeButton(
+                    label = "Emergency",
+                    iconRes = R.drawable.ic_mode_emergency,
+                    isSelected = currentMode == CallMode.EMERGENCY,
+                    enabled = enabled && emergencyEnabled,
+                    selectedColor = MaterialTheme.colorScheme.error,
+                    onClick = { onModeSelected(CallMode.EMERGENCY) }
+                )
+            }
+        }
     }
 }

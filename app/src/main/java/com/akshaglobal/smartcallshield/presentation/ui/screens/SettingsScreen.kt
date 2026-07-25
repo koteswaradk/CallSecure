@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -62,6 +63,8 @@ import com.akshaglobal.smartcallshield.R
 import com.akshaglobal.smartcallshield.util.ReviewUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import com.akshaglobal.smartcallshield.presentation.viewmodel.SettingsViewModel
 import com.akshaglobal.smartcallshield.presentation.viewmodel.CallModesViewModel
 import com.google.accompanist.permissions.isGranted
@@ -78,6 +81,7 @@ import com.akshaglobal.smartcallshield.presentation.ui.screens.CallModeManagemen
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
+    windowSizeClass: WindowSizeClass,
     viewModel: SettingsViewModel = hiltViewModel(),
     isAppEnabled: Boolean?, // Accept nullable for loading state
     callModesViewModel: CallModesViewModel = hiltViewModel()
@@ -122,6 +126,8 @@ fun SettingsScreen(
             "Settings",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
@@ -236,17 +242,35 @@ fun SettingsScreen(
 
         // Legal Sections
         SettingsSectionHeader("Legal")
-        LegalItemCard(
-            title = "Privacy Policy",
-            description = "How we handle your data",
-            onClick = { showPrivacyPolicyDialog = true }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        LegalItemCard(
-            title = "Terms and Conditions",
-            description = "General terms for SmartCallShield",
-            onClick = { showTermsAndConditionsDialog = true }
-        )
+        if (windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
+            LegalItemCard(
+                title = "Privacy Policy",
+                description = "How we handle your data",
+                onClick = { showPrivacyPolicyDialog = true }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LegalItemCard(
+                title = "Terms and Conditions",
+                description = "General terms for SmartCallShield",
+                onClick = { showTermsAndConditionsDialog = true }
+            )
+        } else {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                LegalItemCard(
+                    title = "Privacy Policy",
+                    description = "How we handle your data",
+                    onClick = { showPrivacyPolicyDialog = true },
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                LegalItemCard(
+                    title = "Terms & Conditions",
+                    description = "General terms",
+                    onClick = { showTermsAndConditionsDialog = true },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -398,10 +422,11 @@ fun SettingsScreen(
 fun LegalItemCard(
     title: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(8.dp)
             .clickable(onClick = onClick),

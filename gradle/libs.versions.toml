@@ -62,6 +62,7 @@ androidx-compose-foundation = { group = "androidx.compose.foundation", name = "f
 tensorflow-lite-metadata = { group = "org.tensorflow", name = "tensorflow-lite-metadata", version.ref = "tensorflowLiteMetadata" }
 play-review = { group = "com.google.android.play", name = "review-ktx", version.ref = "playReview" }
 play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
+compose-material3-windowsize = { group = "androidx.compose.material3", name = "material3-window-size-class" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

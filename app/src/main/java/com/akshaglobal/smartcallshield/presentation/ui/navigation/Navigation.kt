@@ -10,6 +10,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +27,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -47,6 +57,7 @@ sealed class Screen(val route: String, val label: String) {
 
 @Composable
 fun MainNavigation(
+    windowSizeClass: WindowSizeClass,
     dashboardViewModel: DashboardViewModel = hiltViewModel()
 ) {
     val isAppEnabled by dashboardViewModel.isAppEnabled.collectAsState()
@@ -55,7 +66,8 @@ fun MainNavigation(
     MainNavigationContent(
         navController = navController,
         isAppEnabled = isAppEnabled,
-        dashboardContent = { DashboardScreen(viewModel = dashboardViewModel) }
+        windowSizeClass = windowSizeClass,
+        dashboardContent = { DashboardScreen(windowSizeClass = windowSizeClass, viewModel = dashboardViewModel) }
     )
 }
 
@@ -63,9 +75,42 @@ fun MainNavigation(
 fun MainNavigationContent(
     navController: NavHostController,
     isAppEnabled: Boolean,
+    windowSizeClass: WindowSizeClass,
     dashboardContent: @Composable () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    val useNavRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+
+    if (useNavRail) {
+        AdaptiveNavRailContent(
+            navController = navController,
+            isAppEnabled = isAppEnabled,
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            windowSizeClass = windowSizeClass,
+            dashboardContent = dashboardContent
+        )
+    } else {
+        AdaptiveBottomBarContent(
+            navController = navController,
+            isAppEnabled = isAppEnabled,
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            windowSizeClass = windowSizeClass,
+            dashboardContent = dashboardContent
+        )
+    }
+}
+
+@Composable
+private fun AdaptiveBottomBarContent(
+    navController: NavHostController,
+    isAppEnabled: Boolean,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    windowSizeClass: WindowSizeClass,
+    dashboardContent: @Composable () -> Unit
+) {
     Scaffold(
         bottomBar = {
             Column {
@@ -99,7 +144,7 @@ fun MainNavigationContent(
                                 indicatorColor = MaterialTheme.colorScheme.primary
                             ),
                             onClick = {
-                                selectedTab = index
+                                onTabSelected(index)
                                 navController.navigate(screen.route) {
                                     popUpTo(navController.graph.startDestinationId)
                                     launchSingleTop = true
@@ -111,37 +156,137 @@ fun MainNavigationContent(
             }
         }
     ) { paddingValues ->
-        NavHost(
+        NavHostContent(
             navController = navController,
-            startDestination = Screen.Dashboard.route,
-            modifier = Modifier.padding(paddingValues)
+            paddingValues = paddingValues,
+            isAppEnabled = isAppEnabled,
+            windowSizeClass = windowSizeClass,
+            dashboardContent = dashboardContent
+        )
+    }
+}
+
+@Composable
+private fun AdaptiveNavRailContent(
+    navController: NavHostController,
+    isAppEnabled: Boolean,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
+    windowSizeClass: WindowSizeClass,
+    dashboardContent: @Composable () -> Unit
+) {
+    Row(modifier = Modifier.fillMaxSize()) {
+        NavigationRail(
+            containerColor = MaterialTheme.colorScheme.background,
+            header = {
+                Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = null,
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         ) {
-            composable(Screen.Dashboard.route) {
-                dashboardContent()
+            val items = listOf(
+                Screen.Dashboard,
+                Screen.Contacts,
+                Screen.Analytics,
+                Screen.Settings
+            )
+
+            Column(
+                modifier = Modifier.fillMaxHeight(),
+                verticalArrangement = Arrangement.Center
+            ) {
+                items.forEachIndexed { index, screen ->
+                    val icon = when (screen) {
+                        Screen.Dashboard -> Icons.Default.Home
+                        Screen.Contacts -> Icons.Default.Phone
+                        Screen.Analytics -> Icons.Default.Info
+                        Screen.Settings -> Icons.Default.Settings
+                        else -> Icons.Default.Settings
+                    }
+
+                    NavigationRailItem(
+                        icon = { Icon(icon, contentDescription = screen.label) },
+                        label = { Text(screen.label) },
+                        selected = selectedTab == index,
+                        onClick = {
+                            onTabSelected(index)
+                            navController.navigate(screen.route) {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
+                        },
+                        colors = NavigationRailItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
             }
-            composable(Screen.Contacts.route) {
-                ContactsScreen()
-            }
-            composable(Screen.Analytics.route) {
-                AnalyticsScreen()
-            }
-            composable(Screen.Settings.route) {
-                SettingsScreen(isAppEnabled = isAppEnabled)
-            }
-            composable(Screen.CallModes.route) {
-                CallModesManagementScreen()
+        }
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            BannerAdView(isCollapsible = false)
+            Scaffold { paddingValues ->
+                NavHostContent(
+                    navController = navController,
+                    paddingValues = paddingValues,
+                    isAppEnabled = isAppEnabled,
+                    windowSizeClass = windowSizeClass,
+                    dashboardContent = dashboardContent
+                )
             }
         }
     }
 }
 
-@Preview(showBackground = true)
+@Composable
+private fun NavHostContent(
+    navController: NavHostController,
+    paddingValues: androidx.compose.foundation.layout.PaddingValues,
+    isAppEnabled: Boolean,
+    windowSizeClass: WindowSizeClass,
+    dashboardContent: @Composable () -> Unit
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Dashboard.route,
+        modifier = Modifier.padding(paddingValues)
+    ) {
+        composable(Screen.Dashboard.route) {
+            dashboardContent()
+        }
+        composable(Screen.Contacts.route) {
+            ContactsScreen()
+        }
+        composable(Screen.Analytics.route) {
+            AnalyticsScreen(windowSizeClass = windowSizeClass)
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(windowSizeClass = windowSizeClass, isAppEnabled = isAppEnabled)
+        }
+        composable(Screen.CallModes.route) {
+            CallModesManagementScreen()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@Preview(showBackground = true, widthDp = 400, heightDp = 800)
 @Composable
 fun MainNavigationPreview() {
+    val windowSizeClass = rememberWindowSizeClass()
     com.akshaglobal.smartcallshield.presentation.ui.theme.SmartCallShieldTheme {
         MainNavigationContent(
             navController = rememberNavController(),
             isAppEnabled = true,
+            windowSizeClass = windowSizeClass,
             dashboardContent = {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Dashboard Placeholder")
@@ -149,4 +294,14 @@ fun MainNavigationPreview() {
             }
         )
     }
+}
+
+@ExperimentalMaterial3WindowSizeClassApi
+@Composable
+fun rememberWindowSizeClass(): WindowSizeClass {
+    // Helper for preview
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    return WindowSizeClass.calculateFromSize(
+        androidx.compose.ui.unit.DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)
+    )
 }

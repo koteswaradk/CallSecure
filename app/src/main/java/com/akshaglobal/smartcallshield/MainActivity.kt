@@ -15,6 +15,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
@@ -79,6 +81,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -106,6 +109,7 @@ class MainActivity : ComponentActivity() {
         val introShown = prefs.getBoolean("intro_shown", false)
 
         setContent {
+            val windowSizeClass = calculateWindowSizeClass(this)
             SmartCallShieldTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -125,7 +129,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         } else {
-                            MainNavigation()
+                            MainNavigation(windowSizeClass = windowSizeClass)
                         }
                     }
                 }
