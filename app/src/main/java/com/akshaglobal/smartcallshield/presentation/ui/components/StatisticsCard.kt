@@ -36,8 +36,8 @@ fun StatisticsCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(title, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
             Icon(
                 painter = painterResource(id = icon),

@@ -3,6 +3,7 @@ package com.akshaglobal.smartcallshield.presentation.ui.screens
 import android.Manifest
 import android.os.Environment
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.foundation.border
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -125,24 +127,26 @@ fun CreateModeAlertDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
+            usePlatformDefaultWidth = false
         ),
         title = {
-            Text("Create & Manage Call Modes", fontWeight = FontWeight.Bold)
+            Text("Create & Manage Call Modes", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
         },
+        containerColor = MaterialTheme.colorScheme.surface,
+        textContentColor = MaterialTheme.colorScheme.onSurface,
         text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .imePadding()
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 8.dp)
             ) {
                 // Mode Selection Dropdown
                 Text(
                     "Select Call Mode",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
@@ -150,7 +154,11 @@ fun CreateModeAlertDialog(
                     onClick = { showModeDropdown = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = 16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Text(selectedMode ?: "Choose a mode", modifier = Modifier.weight(1f))
                     Text("▼", fontSize = 12.sp)
@@ -159,11 +167,11 @@ fun CreateModeAlertDialog(
                 DropdownMenu(
                     expanded = showModeDropdown,
                     onDismissRequest = { showModeDropdown = false },
-                    modifier = Modifier.widthIn(max = 250.dp).fillMaxWidth()
+                    modifier = Modifier.widthIn(max = 250.dp).fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     predefinedModes.forEach { mode ->
                         DropdownMenuItem(
-                            text = { Text(mode) },
+                            text = { Text(mode, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                             onClick = {
                                 selectedMode = mode
                                 showModeDropdown = false
@@ -178,17 +186,28 @@ fun CreateModeAlertDialog(
                         "Search Contacts",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
                     )
 
-                    TextField(
+                    OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         label = { Text("Search by name or number") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp),
-                        singleLine = true
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
 
                     // Contacts List
@@ -196,6 +215,7 @@ fun CreateModeAlertDialog(
                         "Select Contacts (${selectedContacts.size} selected)",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
 
@@ -204,6 +224,7 @@ fun CreateModeAlertDialog(
                             .fillMaxWidth()
                             .weight(1f, fill = false)
                             .heightIn(max = 250.dp)
+                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), MaterialTheme.shapes.medium)
                     ) {
                         items(filteredContacts) { contact ->
                             Row(
@@ -217,7 +238,8 @@ fun CreateModeAlertDialog(
                                     Text(
                                         contact.displayName,
                                         fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         contact.phoneNumber,
@@ -233,7 +255,11 @@ fun CreateModeAlertDialog(
                                         } else {
                                             selectedContacts - contact.phoneNumber
                                         }
-                                    }
+                                    },
+                                    colors = CheckboxDefaults.colors(
+                                        checkedColor = MaterialTheme.colorScheme.primary,
+                                        uncheckedColor = MaterialTheme.colorScheme.outline
+                                    )
                                 )
                             }
                         }
@@ -261,5 +287,6 @@ fun CreateModeAlertDialog(
         },
         modifier = Modifier
             .fillMaxWidth(0.95f)
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
     )
 }

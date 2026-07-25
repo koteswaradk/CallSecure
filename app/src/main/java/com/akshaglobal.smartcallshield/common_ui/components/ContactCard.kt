@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,7 +26,7 @@ fun ContactCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
             modifier = Modifier
@@ -40,12 +39,13 @@ fun ContactCard(
                 Text(
                     contact.displayName.ifEmpty { "Unknown" },
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     contact.phoneNumber,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     contact.category,
@@ -54,7 +54,7 @@ fun ContactCard(
                 )
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, "Delete", tint = Color.Red)
+                Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
             }
         }
     }

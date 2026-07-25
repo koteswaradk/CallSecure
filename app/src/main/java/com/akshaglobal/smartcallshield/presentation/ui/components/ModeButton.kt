@@ -19,11 +19,13 @@ fun ModeButton(
     iconRes: Int,
     isSelected: Boolean,
     enabled: Boolean = true,
+    selectedColor: Color? = null,
     onClick: () -> Unit
 ) {
-    val containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-    val iconTint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    val activeColor = selectedColor ?: MaterialTheme.colorScheme.primary
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant // Keep consistent neutral background
+    val iconTint = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurfaceVariant
+    val borderColor = if (isSelected) activeColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
 
     Button(
         onClick = onClick,

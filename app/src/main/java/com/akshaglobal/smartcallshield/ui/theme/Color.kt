@@ -9,9 +9,9 @@ val PranixTeal = Color(0xFF00D2FF)
 val PranixDarkTeal = Color(0xFF007B9E)
 val PranixGreen = Color(0xFF4ADE80)
 val PranixDarkGreen = Color(0xFF133F27)
-val PranixGrey = Color(0xFF94A3B8)
-val PranixDarkGrey = Color(0xFF475569)
-val PranixLightGrey = Color(0xFFF8FAFC)
+val PranixGrey = Color(0xFFCBD5E1) // Brightened from 0xFF94A3B8 for better legibility
+val PranixDarkGrey = Color(0xFF64748B)
+val PranixLightGrey = Color(0xFFF1F5F9)
 
 // --- Light Theme ---
 val Primary = PranixDarkTeal
@@ -34,13 +34,13 @@ val OnError = Color.White
 val ErrorContainer = Color(0xFFFFDAD6)
 val OnErrorContainer = Color(0xFF410002)
 
-val Background = Color(0xFF0A1929) // Dark Navy for "Light" theme (Dark mode focused app)
+val Background = Color(0xFF0A1929) // Dark Navy
 val OnBackground = Color.White
 val Surface = Color(0xFF132333)
 val OnSurface = Color.White
 val SurfaceVariant = Color(0xFF1E293B)
-val OnSurfaceVariant = PranixGrey
-val Outline = PranixDarkGrey
+val OnSurfaceVariant = Color(0xFFB0C4DE) // Light Steel Blue for better readability
+val Outline = Color(0xFF475569)
 
 // --- Dark Theme ---
 val PrimaryDark = PranixTeal
@@ -68,8 +68,8 @@ val OnBackgroundDark = Color.White
 val SurfaceDark = Color(0xFF0A1929)
 val OnSurfaceDark = Color.White
 val SurfaceVariantDark = Color(0xFF1E293B)
-val OnSurfaceVariantDark = PranixGrey
-val OutlineDark = PranixDarkGrey
+val OnSurfaceVariantDark = Color(0xFFB0C4DE) // Matching light steel blue
+val OutlineDark = Color(0xFF475569)
 
 // Branded helpers
 val Success = PranixGreen

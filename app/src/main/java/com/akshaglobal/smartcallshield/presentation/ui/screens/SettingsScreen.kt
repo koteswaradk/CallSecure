@@ -24,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.foundation.border
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,7 +38,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.akshaglobal.smartcallshield.common_ui.components.SettingCard
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -178,17 +180,31 @@ fun SettingsScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(8.dp)
         )
-        TextField(
+        OutlinedTextField(
             value = drivingModeAutoReply,
             onValueChange = { viewModel.setDrivingModeAutoReply(it) },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp)
+                .height(120.dp)
                 .padding(8.dp),
             label = { Text("Reply message") },
             maxLines = 5,
-            enabled = isAppEnabled && !drivingModeEnabled, // Enabled only if app is enabled AND driving mode switch is OFF
-            placeholder = { Text("Enter auto-reply message") }
+            enabled = isAppEnabled && !drivingModeEnabled,
+            placeholder = { Text("Enter auto-reply message") },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
         )
         if (drivingModeEnabled) {
             Text(
@@ -291,57 +307,65 @@ fun SettingsScreen(
         if (showHowToUseDialog) {
             AlertDialog(
                 onDismissRequest = { showHowToUseDialog = false },
-                title = { Text("How to Use SmartCallShield") },
+                title = { Text("How to Use SmartCallShield", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+                containerColor = MaterialTheme.colorScheme.surface,
+                textContentColor = MaterialTheme.colorScheme.onSurface,
                 text = {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        Text("🎯 Core Features:", fontWeight = FontWeight.Bold)
-                        Text("• AI Spam Detection: Automatically identifies and blocks potential spam calls.")
-                        Text("• Smart Call Modes: Switch between Normal, Family, Driving, and Emergency modes.")
-                        Text("• Contact Management: Whitelist your trusted contacts for each mode.")
+                        Text("🎯 Core Features:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("• AI Spam Detection: Automatically identifies and blocks potential spam calls.", color = MaterialTheme.colorScheme.onSurface)
+                        Text("• Smart Call Modes: Switch between Normal, Family, Driving, and Emergency modes.", color = MaterialTheme.colorScheme.onSurface)
+                        Text("• Contact Management: Whitelist your trusted contacts for each mode.", color = MaterialTheme.colorScheme.onSurface)
                         
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("🚗 Driving Mode:", fontWeight = FontWeight.Bold)
-                        Text("• Once enabled, callers in your Driving contact list will hear the phone ring for 5 seconds.")
-                        Text("• If not answered, the call is rejected and an auto-reply SMS is sent.")
-                        Text("• All other calls are rejected immediately for your safety.")
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("🚗 Driving Mode:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("• Once enabled, callers in your Driving contact list will hear the phone ring for 5 seconds.", color = MaterialTheme.colorScheme.onSurface)
+                        Text("• If not answered, the call is rejected and an auto-reply SMS is sent.", color = MaterialTheme.colorScheme.onSurface)
+                        Text("• All other calls are rejected immediately for your safety.", color = MaterialTheme.colorScheme.onSurface)
                         
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("🛡️ Setup Guide:", fontWeight = FontWeight.Bold)
-                        Text("1. Enable the app using the switch on the Dashboard.")
-                        Text("2. Grant necessary permissions (Phone, SMS, Contacts).")
-                        Text("3. Go to 'Call Modes' to add contacts to Family, Driving, or Emergency lists.")
-                        Text("4. Set SmartCallShield as your default Caller ID & Spam app for best results.")
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("🛡️ Setup Guide:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("1. Enable the app using the switch on the Dashboard.", color = MaterialTheme.colorScheme.onSurface)
+                        Text("2. Grant necessary permissions (Phone, SMS, Contacts).", color = MaterialTheme.colorScheme.onSurface)
+                        Text("3. Go to 'Call Modes' to add contacts to Family, Driving, or Emergency lists.", color = MaterialTheme.colorScheme.onSurface)
+                        Text("4. Set SmartCallShield as your default Caller ID & Spam app for best results.", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 confirmButton = {
                     Button(onClick = { showHowToUseDialog = false }) {
                         Text("Got it!")
                     }
-                }
+                },
+                modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
             )
         }
 
         if (showPrivacyPolicyDialog) {
             AlertDialog(
                 onDismissRequest = { showPrivacyPolicyDialog = false },
-                title = { Text("Privacy Policy") },
+                title = { Text("Privacy Policy", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+                containerColor = MaterialTheme.colorScheme.surface,
+                textContentColor = MaterialTheme.colorScheme.onSurface,
                 text = {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        Text("All the data processed and stored locally\n\nNot collecting any personal data from the user\n\nNot handling any kind of data manipulation of the calls\n\nOnce the app is deleted from the device complete data will be deleted")
+                        Text("All the data processed and stored locally\n\nNot collecting any personal data from the user\n\nNot handling any kind of data manipulation of the calls\n\nOnce the app is deleted from the device complete data will be deleted", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 confirmButton = {
                     Button(onClick = { showPrivacyPolicyDialog = false }) {
                         Text("Close")
                     }
-                }
+                },
+                modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
             )
         }
 
         if (showTermsAndConditionsDialog) {
             AlertDialog(
                 onDismissRequest = { showTermsAndConditionsDialog = false },
-                title = { Text("Terms & Conditions") },
+                title = { Text("Terms & Conditions", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+                containerColor = MaterialTheme.colorScheme.surface,
+                textContentColor = MaterialTheme.colorScheme.onSurface,
                 text = {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                         Text("Last Updated: June 30, 2026" +
@@ -363,14 +387,15 @@ fun SettingsScreen(
                                 "\n\n16. Changes to These Terms\nThese Terms & Conditions may be updated periodically.\nThe latest version will always be available within the application. Continued use of SmartCallShield after changes become effective constitutes acceptance of the updated terms." +
                                 "\n\n17. Contact Us\nIf you have questions, feedback, or concerns regarding these Terms & Conditions, please contact us using the support option provided within the application or through our official website." +"10. Children's Privacy\n" +
                                 "\n\n18 SmartCallShield is not intended for children under the age of 13 (or the minimum age required by applicable law).\n"+
-                                "\n\n19. Acceptance\nBy installing or using SmartCallShield, you acknowledge that you have read, understood, and agree to these Terms & Conditions.")
+                                "\n\n19. Acceptance\nBy installing or using SmartCallShield, you acknowledge that you have read, understood, and agree to these Terms & Conditions.", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 confirmButton = {
                     Button(onClick = { showTermsAndConditionsDialog = false }) {
                         Text("Close")
                     }
-                }
+                },
+                modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
             )
         }
 

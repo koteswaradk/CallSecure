@@ -22,6 +22,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.border
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -55,6 +57,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.core.net.toUri
@@ -189,10 +192,11 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
 
     // Show dialog to prompt user to set as default dialer
     if (showSetDefaultDialerDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showSetDefaultDialerDialog = false },
-            title = { Text("Set as Default Dialer") },
-            text = { Text("To place calls directly, please set SmartCallShield as your device's default phone app.") },
+            title = { Text("Set as Default Dialer", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+            text = { Text("To place calls directly, please set SmartCallShield as your device's default phone app.", color = MaterialTheme.colorScheme.onSurface) },
+            containerColor = MaterialTheme.colorScheme.surface,
             confirmButton = {
                 Button(onClick = {
                     showSetDefaultDialerDialog = false
@@ -215,7 +219,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                     }
                 }) { Text("Dial") }
             },
-            modifier = Modifier.fillMaxWidth(0.95f)
+            modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
         )
     }
 
@@ -265,7 +269,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                             "SmartAICallShield",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = Color.White
                         )
                         // Switch is always enabled so user can interact
                         Switch(
@@ -285,12 +289,13 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                 // Dialogs (Logic only, UI is triggered by state)
                 item {
                     if (showEnableDialog) {
-                        androidx.compose.material3.AlertDialog(
+                        AlertDialog(
                             onDismissRequest = { showEnableDialog = false },
-                            title = { Text("Enable CallShield") },
+                            title = { Text("Enable CallShield", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                             text = {
-                                Text("To enable CallShield, you must confirm. Normal mode will be set by default.")
+                                Text("To enable CallShield, you must confirm. Normal mode will be set by default.", color = MaterialTheme.colorScheme.onSurface)
                             },
+                            containerColor = MaterialTheme.colorScheme.surface,
                             confirmButton = {
                                 Button(onClick = {
                                     viewModel.toggleAppEnabled()
@@ -302,17 +307,19 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                             },
                             dismissButton = {
                                 Button(onClick = { showEnableDialog = false }) { Text("Cancel") }
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
                         )
                     }
                     
                     if (showDisableDialog) {
-                        androidx.compose.material3.AlertDialog(
+                        AlertDialog(
                             onDismissRequest = { showDisableDialog = false },
-                            title = { Text("Disable CallShield") },
+                            title = { Text("Disable CallShield", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                             text = {
-                                Text("You are disabling the switch. Your phone will receive ALL CALLS WITHOUT ANY CALL FILTERING, including unknown calls. Press OK to disable CallShield.")
+                                Text("You are disabling the switch. Your phone will receive ALL CALLS WITHOUT ANY CALL FILTERING, including unknown calls. Press OK to disable CallShield.", color = MaterialTheme.colorScheme.onSurface)
                             },
+                            containerColor = MaterialTheme.colorScheme.surface,
                             confirmButton = {
                                 Button(onClick = {
                                     viewModel.toggleAppEnabled()
@@ -321,20 +328,22 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                             },
                             dismissButton = {
                                 Button(onClick = { showDisableDialog = false }) { Text("Cancel") }
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
                         )
                     }
 
                     if (showModeChangeDialog && pendingMode != null) {
-                        androidx.compose.material3.AlertDialog(
+                        AlertDialog(
                             onDismissRequest = {
                                 showModeChangeDialog = false
                                 pendingMode = null
                             },
-                            title = { Text("Change Call Mode") },
+                            title = { Text("Change Call Mode", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                             text = {
-                                Text("CallShield will be applied to the selected mode. Press OK to switch mode.")
+                                Text("CallShield will be applied to the selected mode. Press OK to switch mode.", color = MaterialTheme.colorScheme.onSurface)
                             },
+                            containerColor = MaterialTheme.colorScheme.surface,
                             confirmButton = {
                                 Button(onClick = {
                                     viewModel.setMode(pendingMode!!)
@@ -358,7 +367,8 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                                     showModeChangeDialog = false
                                     pendingMode = null
                                 }) { Text("Cancel") }
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
                         )
                     }
                 }
@@ -429,7 +439,17 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         label = { Text("Search by name or number") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -463,13 +483,15 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                 // Permission Denied Dialog
                 item {
                     if (showPermissionDeniedDialog) {
-                        androidx.compose.material3.AlertDialog(
+                        AlertDialog(
                             onDismissRequest = { showPermissionDeniedDialog = false },
-                            title = { Text("Permission Required") },
-                            text = { Text("Please grant the CALL_PHONE permission to place calls directly from this app.") },
+                            title = { Text("Permission Required", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+                            text = { Text("Please grant the CALL_PHONE permission to place calls directly from this app.", color = MaterialTheme.colorScheme.onSurface) },
+                            containerColor = MaterialTheme.colorScheme.surface,
                             confirmButton = {
                                 Button(onClick = { showPermissionDeniedDialog = false }) { Text("OK") }
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
                         )
                     }
                 }
@@ -600,6 +622,7 @@ private fun ModeSelector(
             iconRes = R.drawable.ic_mode_normal,
             isSelected = currentMode == CallMode.NORMAL,
             enabled = enabled && normalEnabled,
+            selectedColor = MaterialTheme.colorScheme.primary,
             onClick = { onModeSelected(CallMode.NORMAL) }
         )
         ModeButton(
@@ -607,6 +630,7 @@ private fun ModeSelector(
             iconRes = R.drawable.ic_mode_family,
             isSelected = currentMode == CallMode.FAMILY,
             enabled = enabled && familyEnabled,
+            selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.PranixGreen,
             onClick = { onModeSelected(CallMode.FAMILY) }
         )
         ModeButton(
@@ -614,6 +638,7 @@ private fun ModeSelector(
             iconRes = R.drawable.ic_mode_driving,
             isSelected = currentMode == CallMode.DRIVING,
             enabled = enabled && drivingEnabled,
+            selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.Warning,
             onClick = { onModeSelected(CallMode.DRIVING) }
         )
         ModeButton(
@@ -621,6 +646,7 @@ private fun ModeSelector(
             iconRes = R.drawable.ic_mode_emergency,
             isSelected = currentMode == CallMode.EMERGENCY,
             enabled = enabled && emergencyEnabled,
+            selectedColor = MaterialTheme.colorScheme.error,
             onClick = { onModeSelected(CallMode.EMERGENCY) }
         )
     }

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -34,7 +33,7 @@ fun ExportDataSection() {
             .padding(start = 8.dp)
     )
 
-    Text("Export your call history and analytics report.", fontSize = 14.sp, color = Color.Gray)
+    Text("Export your call history and analytics report.", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Spacer(modifier = Modifier.height(8.dp))
 
     Row(Modifier.fillMaxWidth()) {
