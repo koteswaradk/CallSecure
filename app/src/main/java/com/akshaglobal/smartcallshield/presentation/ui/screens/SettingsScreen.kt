@@ -234,16 +234,6 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        SettingCard(
-            title = "Cloud Sync (Premium)",
-            description = "Sync your settings across devices",
-            isEnabled = false,
-            onToggle = {
-            }
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         // Legal Sections
         SettingsSectionHeader("Legal")
         LegalItemCard(

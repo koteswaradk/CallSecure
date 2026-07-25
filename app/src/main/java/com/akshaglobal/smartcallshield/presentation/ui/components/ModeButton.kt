@@ -23,9 +23,11 @@ fun ModeButton(
     onClick: () -> Unit
 ) {
     val activeColor = selectedColor ?: MaterialTheme.colorScheme.primary
-    val containerColor = MaterialTheme.colorScheme.surfaceVariant // Keep consistent neutral background
-    val iconTint = if (isSelected) activeColor else MaterialTheme.colorScheme.onSurfaceVariant
-    val borderColor = if (isSelected) activeColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant
+    // Only show the functional color if the mode is both selected AND the button is enabled
+    val isVisualSelected = isSelected && enabled
+    val iconTint = if (isVisualSelected) activeColor else MaterialTheme.colorScheme.onSurfaceVariant
+    val borderColor = if (isVisualSelected) activeColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
 
     Button(
         onClick = onClick,
