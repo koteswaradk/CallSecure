@@ -52,9 +52,6 @@ class PreferencesManager(private val context: Context) {
         // Privacy
         private val PRIVACY_MODE = booleanPreferencesKey("privacy_mode")
         private val DATA_COLLECTION_CONSENT = booleanPreferencesKey("data_collection_consent")
-
-        // Theme
-        private val APP_THEME = stringPreferencesKey("app_theme")
     }
 
     // Current Mode
@@ -256,19 +253,4 @@ class PreferencesManager(private val context: Context) {
         }
     }
 
-    // Theme
-    val appTheme: Flow<com.akshaglobal.smartcallshield.data.model.AppTheme> = context.dataStore.data.map { preferences ->
-        val themeName = preferences[APP_THEME] ?: com.akshaglobal.smartcallshield.data.model.AppTheme.SYSTEM.name
-        try {
-            com.akshaglobal.smartcallshield.data.model.AppTheme.valueOf(themeName)
-        } catch (e: Exception) {
-            com.akshaglobal.smartcallshield.data.model.AppTheme.SYSTEM
-        }
-    }
-
-    suspend fun setAppTheme(theme: com.akshaglobal.smartcallshield.data.model.AppTheme) {
-        context.dataStore.edit { preferences ->
-            preferences[APP_THEME] = theme.name
-        }
-    }
 }

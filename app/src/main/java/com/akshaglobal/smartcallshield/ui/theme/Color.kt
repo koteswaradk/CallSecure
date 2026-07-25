@@ -2,74 +2,76 @@ package com.akshaglobal.smartcallshield.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// SmartCallShield branded colors
-val Primary = Color(0xFF2196F3)
-val OnPrimary = Color(0xFFFFFFFF)
-val PrimaryContainer = Color(0xFFD1E4FF)
-val OnPrimaryContainer = Color(0xFF001D36)
+// --- PRANIX Brand Palette ---
+val PranixNavy = Color(0xFF04101A)
+val PranixDeepNavy = Color(0xFF02080D)
+val PranixTeal = Color(0xFF00D2FF)
+val PranixDarkTeal = Color(0xFF007B9E)
+val PranixGreen = Color(0xFF4ADE80)
+val PranixDarkGreen = Color(0xFF133F27)
+val PranixGrey = Color(0xFF94A3B8)
+val PranixDarkGrey = Color(0xFF475569)
+val PranixLightGrey = Color(0xFFF8FAFC)
 
-val Secondary = Color(0xFF545F71)
-val OnSecondary = Color(0xFFFFFFFF)
-val SecondaryContainer = Color(0xFFD7E3F8)
-val OnSecondaryContainer = Color(0xFF111C2B)
+// --- Light Theme ---
+val Primary = PranixDarkTeal
+val OnPrimary = Color.White
+val PrimaryContainer = Color(0xFFB2F5FF)
+val OnPrimaryContainer = Color(0xFF001F29)
 
-val Tertiary = Color(0xFF6E5976)
-val OnTertiary = Color(0xFFFFFFFF)
-val TertiaryContainer = Color(0xFFF7D8FF)
-val OnTertiaryContainer = Color(0xFF271730)
+val Secondary = PranixDarkGreen
+val OnSecondary = Color.White
+val SecondaryContainer = Color(0xFFB9F1CD)
+val OnSecondaryContainer = Color(0xFF00210E)
+
+val Tertiary = PranixDarkGrey
+val OnTertiary = Color.White
+val TertiaryContainer = Color(0xFFE2E8F0)
+val OnTertiaryContainer = Color(0xFF1E293B)
 
 val Error = Color(0xFFBA1A1A)
-val OnError = Color(0xFFFFFFFF)
+val OnError = Color.White
 val ErrorContainer = Color(0xFFFFDAD6)
 val OnErrorContainer = Color(0xFF410002)
 
-val Background = Color(0xFFF8F9FF)
-val OnBackground = Color(0xFF191C20)
-val Surface = Color(0xFFF8F9FF)
-val OnSurface = Color(0xFF191C20)
-val SurfaceVariant = Color(0xFFDFE2EB)
-val OnSurfaceVariant = Color(0xFF43474E)
-val Outline = Color(0xFF73474E)
+val Background = Color(0xFF0A1929) // Dark Navy for "Light" theme (Dark mode focused app)
+val OnBackground = Color.White
+val Surface = Color(0xFF132333)
+val OnSurface = Color.White
+val SurfaceVariant = Color(0xFF1E293B)
+val OnSurfaceVariant = PranixGrey
+val Outline = PranixDarkGrey
 
-// Rich Navy Dark Theme Palette
-val NavyBackground = Color(0xFF0A192F)
-val NavySurface = Color(0xFF112240)
-val NavyOnSurface = Color(0xFFCCD6F6)
-val NavyOnSurfaceVariant = Color(0xFF8892B0)
-val NavyPrimary = Color(0xFF64FFDA) // Cool Mint contrast
-val NavySecondary = Color(0xFF233554)
-val NavyOutline = Color(0xFF233554)
+// --- Dark Theme ---
+val PrimaryDark = PranixTeal
+val OnPrimaryDark = PranixDeepNavy
+val PrimaryContainerDark = Color(0xFF004D5D)
+val OnPrimaryContainerDark = Color(0xFFB2F5FF)
 
-// Dark Theme Colors (Updated for Navy Blue feel)
-val PrimaryDark = NavyPrimary
-val OnPrimaryDark = Color(0xFF00382E)
-val PrimaryContainerDark = Color(0xFF005144)
-val OnPrimaryContainerDark = Color(0xFF79FFE1)
+val SecondaryDark = PranixGreen
+val OnSecondaryDark = Color(0xFF003917)
+val SecondaryContainerDark = Color(0xFF005224)
+val OnSecondaryContainerDark = Color(0xFF8DFF9F)
 
-val SecondaryDark = Color(0xFFBCC7DB)
-val OnSecondaryDark = Color(0xFF263141)
-val SecondaryContainerDark = NavySecondary
-val OnSecondaryContainerDark = Color(0xFFD7E3F8)
-
-val TertiaryDark = Color(0xFFDABFE2)
-val OnTertiaryDark = Color(0xFF3D2B3D)
-val TertiaryContainerDark = Color(0xFF554159)
-val OnTertiaryContainerDark = Color(0xFFF7D8FF)
+val TertiaryDark = PranixGrey
+val OnTertiaryDark = PranixDeepNavy
+val TertiaryContainerDark = PranixDarkGrey
+val OnTertiaryContainerDark = PranixLightGrey
 
 val ErrorDark = Color(0xFFFFB4AB)
 val OnErrorDark = Color(0xFF690005)
 val ErrorContainerDark = Color(0xFF93000A)
 val OnErrorContainerDark = Color(0xFFFFDAD6)
 
-val BackgroundDark = NavyBackground
-val OnBackgroundDark = NavyOnSurface
-val SurfaceDark = NavySurface
-val OnSurfaceDark = NavyOnSurface
-val SurfaceVariantDark = NavySecondary
-val OnSurfaceVariantDark = NavyOnSurfaceVariant
-val OutlineDark = NavyOutline
+val BackgroundDark = PranixNavy // Very Dark Navy (0xFF04101A)
+val OnBackgroundDark = Color.White
+val SurfaceDark = Color(0xFF0A1929)
+val OnSurfaceDark = Color.White
+val SurfaceVariantDark = Color(0xFF1E293B)
+val OnSurfaceVariantDark = PranixGrey
+val OutlineDark = PranixDarkGrey
 
 // Branded helpers
-val Success = Color(0xFF4CAF50)
-val Warning = Color(0xFFFFC107)
-val Info = Color(0xFF2196F3)
+val Success = PranixGreen
+val Warning = Color(0xFFFBBF24)
+val Info = PranixTeal

@@ -97,12 +97,6 @@ enum class CallType {
     MISSED
 }
 
-enum class AppTheme {
-    SYSTEM,
-    LIGHT,
-    DARK
-}
-
 // New entities for call modes
 @Entity(tableName = "call_modes")
 data class ModeEntity(

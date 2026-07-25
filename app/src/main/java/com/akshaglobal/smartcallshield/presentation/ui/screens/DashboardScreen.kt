@@ -371,14 +371,14 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel(), callModesVi
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFFFD700)
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
                             )
                         ) {
                             Text(
                                 "✨ Premium Features Unlocked",
                                 modifier = Modifier.padding(16.dp),
                                 fontWeight = FontWeight.Bold,
-                                color = Color.Black
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                         }
                         Spacer(modifier = Modifier.height(16.dp))

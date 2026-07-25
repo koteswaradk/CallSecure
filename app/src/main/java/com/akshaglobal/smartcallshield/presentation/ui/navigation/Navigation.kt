@@ -6,8 +6,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,8 +19,12 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -40,24 +46,40 @@ sealed class Screen(val route: String, val label: String) {
 }
 
 @Composable
-fun MainNavigation() {
-    val navController = rememberNavController()
-    var selectedTab by remember { mutableIntStateOf(0) }
-    // Shared DashboardViewModel for app state
-    val dashboardViewModel: DashboardViewModel = hiltViewModel()
+fun MainNavigation(
+    dashboardViewModel: DashboardViewModel = hiltViewModel()
+) {
     val isAppEnabled by dashboardViewModel.isAppEnabled.collectAsState()
+    val navController = rememberNavController()
+
+    MainNavigationContent(
+        navController = navController,
+        isAppEnabled = isAppEnabled,
+        dashboardContent = { DashboardScreen(viewModel = dashboardViewModel) }
+    )
+}
+
+@Composable
+fun MainNavigationContent(
+    navController: NavHostController,
+    isAppEnabled: Boolean,
+    dashboardContent: @Composable () -> Unit
+) {
+    var selectedTab by remember { mutableIntStateOf(0) }
     Scaffold(
         bottomBar = {
             Column {
                 BannerAdView(isCollapsible = true)
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.background
+                ) {
                     val items = listOf(
                         Screen.Dashboard,
                         Screen.Contacts,
                         Screen.Analytics,
                         Screen.Settings
                     )
-    
+
                     items.forEachIndexed { index, screen ->
                         val icon = when (screen) {
                             Screen.Dashboard -> Icons.Default.Home
@@ -66,11 +88,16 @@ fun MainNavigation() {
                             Screen.Settings -> Icons.Default.Settings
                             else -> Icons.Default.Settings
                         }
-    
+
                         NavigationBarItem(
                             icon = { Icon(icon, contentDescription = screen.label) },
                             label = { Text(screen.label) },
                             selected = selectedTab == index,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primary
+                            ),
                             onClick = {
                                 selectedTab = index
                                 navController.navigate(screen.route) {
@@ -90,7 +117,7 @@ fun MainNavigation() {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Screen.Dashboard.route) {
-                DashboardScreen(viewModel = dashboardViewModel)
+                dashboardContent()
             }
             composable(Screen.Contacts.route) {
                 ContactsScreen()
@@ -105,5 +132,21 @@ fun MainNavigation() {
                 CallModesManagementScreen()
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainNavigationPreview() {
+    com.akshaglobal.smartcallshield.presentation.ui.theme.SmartCallShieldTheme {
+        MainNavigationContent(
+            navController = rememberNavController(),
+            isAppEnabled = true,
+            dashboardContent = {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Dashboard Placeholder")
+                }
+            }
+        )
     }
 }

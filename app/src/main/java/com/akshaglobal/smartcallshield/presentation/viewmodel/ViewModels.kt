@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import com.akshaglobal.smartcallshield.data.model.CallLogEntity
 import com.akshaglobal.smartcallshield.data.model.CallMode
-import com.akshaglobal.smartcallshield.data.model.AppTheme
 import com.akshaglobal.smartcallshield.data.model.CallStatistics
 import com.akshaglobal.smartcallshield.data.model.ContactEntity
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
@@ -222,9 +221,6 @@ class SettingsViewModel @Inject constructor(
     private val _hasDrivingContacts = MutableStateFlow(false)
     val hasDrivingContacts = _hasDrivingContacts.asStateFlow()
 
-    private val _appTheme = MutableStateFlow(AppTheme.SYSTEM)
-    val appTheme = _appTheme.asStateFlow()
-
     init {
         viewModelScope.launch {
             contactRepository.getContactsByCategory("DRIVING").collect { contacts ->
@@ -265,12 +261,6 @@ class SettingsViewModel @Inject constructor(
                 _autoRejectSpam.value = it
             }
         }
-
-        viewModelScope.launch {
-            preferencesManager.appTheme.collect {
-                _appTheme.value = it
-            }
-        }
     }
 
     fun setSpamDetectionEnabled(enabled: Boolean) {
@@ -308,12 +298,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setAppTheme(theme: AppTheme) {
-        viewModelScope.launch {
-            preferencesManager.setAppTheme(theme)
-            _appTheme.value = theme
-        }
-    }
 }
 
 @HiltViewModel
