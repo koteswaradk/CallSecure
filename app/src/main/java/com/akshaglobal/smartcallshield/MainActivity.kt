@@ -48,9 +48,6 @@ class MainActivity : ComponentActivity() {
         Manifest.permission.SEND_SMS,
         Manifest.permission.READ_CONTACTS,
         Manifest.permission.CALL_PHONE,
-        Manifest.permission.WRITE_CALL_LOG,
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.INTERNET,
         Manifest.permission.ACCESS_NETWORK_STATE
     ).plus(
