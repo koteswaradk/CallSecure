@@ -120,7 +120,7 @@
     <string name="notif_call_protection_desc">Monitoring for incoming calls and blocking spam.</string>
     <string name="notif_action_disable">Disable Protection</string>
     <string name="notif_driving_mode_active">Driving Mode Active</string>
-    <string name="notif_driving_mode_desc">Incoming calls will be handled safely</string>
+    <string name="notif_driving_mode_desc">Auto reply SMS will be sent to the mode contacts saved if the call comes from them</string>
     <string name="notif_call_blocked">Call Blocked</string>
     <string name="notif_spam_detected">Spam Detected</string>
     <string name="notif_sms_sent">Auto-Reply Sent</string>

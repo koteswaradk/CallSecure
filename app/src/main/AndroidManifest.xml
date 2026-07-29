@@ -110,16 +110,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Foreground Service for Driving Mode -->
-        <service
-            android:name=".service.DrivingModeService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_TYPE"
-                android:value="This service handles automated call responses and safety monitoring while the user is driving." />
-        </service>
 
         <!-- Foreground Service for Call Protection -->
         <service

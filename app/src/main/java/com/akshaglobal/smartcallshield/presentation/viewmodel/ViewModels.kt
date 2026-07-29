@@ -212,6 +212,9 @@ class SettingsViewModel @Inject constructor(
     private val _drivingModeAutoReply = MutableStateFlow("")
     val drivingModeAutoReply = _drivingModeAutoReply.asStateFlow()
 
+    private val _drivingModeAutoReplyEnabled = MutableStateFlow(false)
+    val drivingModeAutoReplyEnabled = _drivingModeAutoReplyEnabled.asStateFlow()
+
     private val _spamConfidenceThreshold = MutableStateFlow(0.7f)
     val spamConfidenceThreshold = _spamConfidenceThreshold.asStateFlow()
 
@@ -251,6 +254,12 @@ class SettingsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            preferencesManager.drivingModeAutoReplyEnabled.collect {
+                _drivingModeAutoReplyEnabled.value = it
+            }
+        }
+
+        viewModelScope.launch {
             preferencesManager.spamConfidenceThreshold.collect {
                 _spamConfidenceThreshold.value = it
             }
@@ -281,6 +290,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.setDrivingModeAutoReply(message)
             _drivingModeAutoReply.value = message
+        }
+    }
+
+    fun setDrivingModeAutoReplyEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setDrivingModeAutoReplyEnabled(enabled)
+            _drivingModeAutoReplyEnabled.value = enabled
         }
     }
 

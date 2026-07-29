@@ -28,6 +28,7 @@ class HandleCallUseCase @Inject constructor(
 
         if (currentMode == "DRIVING") {
             val drivingEnabled = preferencesManager.drivingModeEnabled.first()
+            val autoReplyEnabled = preferencesManager.drivingModeAutoReplyEnabled.first()
             if (drivingEnabled) {
                 val drivingContacts = contactRepository.getContactsByCategory("DRIVING").first()
                 val isDrivingContact = drivingContacts.any { c ->
@@ -36,8 +37,13 @@ class HandleCallUseCase @Inject constructor(
                 }
                 
                 return if (isDrivingContact) {
-                    println("[DEBUG] Driving contact detected. Decision: REPLY_SMS")
-                    CallDecision.REPLY_SMS
+                    if (autoReplyEnabled) {
+                        println("[DEBUG] Driving contact detected and Auto-Reply ON. Decision: REPLY_SMS")
+                        CallDecision.REPLY_SMS
+                    } else {
+                        println("[DEBUG] Driving contact detected but Auto-Reply OFF. Decision: ALLOW")
+                        CallDecision.ALLOW
+                    }
                 } else {
                     println("[DEBUG] Not a driving contact in Driving Mode. Decision: REJECT")
                     CallDecision.REJECT

@@ -89,6 +89,7 @@ fun SettingsScreen(
     val spamDetectionEnabled by viewModel.spamDetectionEnabled.collectAsState()
     val drivingModeEnabled by viewModel.drivingModeEnabled.collectAsState()
     val drivingModeAutoReply by viewModel.drivingModeAutoReply.collectAsState()
+    val drivingModeAutoReplyEnabled by viewModel.drivingModeAutoReplyEnabled.collectAsState()
     val spamConfidenceThreshold by viewModel.spamConfidenceThreshold.collectAsState()
     val autoRejectSpam by viewModel.autoRejectSpam.collectAsState()
     val context = LocalContext.current
@@ -176,6 +177,16 @@ fun SettingsScreen(
             isEnabled = drivingModeEnabled,
             onToggle = { viewModel.setDrivingModeEnabled(it) },
             enabled = isAppEnabled && isDrivingModeValid // Enable only if app is enabled AND Driving mode has contacts
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingCard(
+            title = "Enable Auto-Reply SMS",
+            description = "Send SMS automatically to allowed contacts",
+            isEnabled = drivingModeAutoReplyEnabled,
+            onToggle = { viewModel.setDrivingModeAutoReplyEnabled(it) },
+            enabled = isAppEnabled && drivingModeEnabled
         )
 
         Spacer(modifier = Modifier.height(8.dp))

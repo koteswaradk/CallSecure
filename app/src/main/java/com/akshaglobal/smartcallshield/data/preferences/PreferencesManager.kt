@@ -30,6 +30,7 @@ class PreferencesManager(private val context: Context) {
         // Driving Mode
         private val DRIVING_MODE_ENABLED = booleanPreferencesKey("driving_mode_enabled")
         private val DRIVING_MODE_AUTO_REPLY = stringPreferencesKey("driving_mode_auto_reply")
+        private val DRIVING_MODE_AUTO_REPLY_ENABLED = booleanPreferencesKey("driving_mode_auto_reply_enabled")
         private val DRIVING_MODE_GPS_DETECTION = booleanPreferencesKey("driving_mode_gps_detection")
 
         // Family Mode
@@ -125,6 +126,16 @@ class PreferencesManager(private val context: Context) {
     suspend fun setDrivingModeAutoReply(message: String) {
         context.dataStore.edit { preferences ->
             preferences[DRIVING_MODE_AUTO_REPLY] = message
+        }
+    }
+
+    val drivingModeAutoReplyEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[DRIVING_MODE_AUTO_REPLY_ENABLED] ?: false
+    }
+
+    suspend fun setDrivingModeAutoReplyEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[DRIVING_MODE_AUTO_REPLY_ENABLED] = enabled
         }
     }
 

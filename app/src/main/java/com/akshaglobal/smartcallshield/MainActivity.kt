@@ -25,12 +25,12 @@ import com.akshaglobal.smartcallshield.presentation.ui.navigation.MainNavigation
 import com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.SplashScreen
 import com.akshaglobal.smartcallshield.presentation.ui.theme.SmartCallShieldTheme
-import com.akshaglobal.smartcallshield.service.DrivingModeService
 import com.akshaglobal.smartcallshield.service.ai.FirstLaunchTrainer
 import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -140,11 +140,8 @@ class MainActivity : ComponentActivity() {
 
         Log.d(TAG, "Initializing app")
 
-        // Start driving mode service if enabled
-        startDrivingModeIfNeeded()
-
-        // Start call protection service and observe its state
-        observeCallProtectionState()
+        // Manage foreground services based on preferences
+        manageServices()
 
         // Register call receiver
         registerCallReceiver()
@@ -181,18 +178,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startDrivingModeIfNeeded() {
-        // Check preferences and start service if needed
-        startForegroundService(Intent(this, DrivingModeService::class.java))
-    }
-
-    private fun observeCallProtectionState() {
+    private fun manageServices() {
         lifecycleScope.launch {
-            preferencesManager.isAppEnabled.collect { enabled ->
-                Log.d(TAG, "isAppEnabled collected: $enabled")
-                if (enabled) {
+            // Observe overall app enabled state
+            preferencesManager.isAppEnabled.collect { appEnabled ->
+                Log.d(TAG, "Service State Update: appEnabled=$appEnabled")
+                
+                if (appEnabled) {
                     val intent = Intent(this@MainActivity, com.akshaglobal.smartcallshield.service.CallProtectionService::class.java)
-                    Log.d(TAG, "Starting CallProtectionService")
                     startForegroundService(intent)
                 }
             }
