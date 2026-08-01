@@ -30,10 +30,10 @@ import androidx.core.content.edit
 fun IntroScreen(context: Context, onFinish: () -> Unit) {
     // Use only fallback drawable icons for intro pages
     val pages: List<Triple<String, String, Int>> = listOf(
-        Triple("Welcome to SmartCallShield!", "Protect your calls and privacy.", R.drawable.ic_mode_family),
-        Triple("Block Spam & Robocalls", "Automatically block spam, robocalls, and unknown calls.", R.drawable.ic_spam_block),
-        Triple("Call Statistics & Modes", "View analytics and manage call modes easily.", R.drawable.ic_blocked_call),
-        Triple("Smart Dialer", "Dial safely and manage contacts with SmartCallShield.", R.drawable.ic_mode_driving)
+        Triple("Stay Focused While Driving", "Automatically respond to calls with custom SMS messages while you drive.", R.drawable.ic_mode_driving),
+        Triple("Smart Call Modes", "Select who can reach you. Choose between Normal, Family, and Emergency modes.", R.drawable.ic_mode_family),
+        Triple("AI Spam Protection", "Secondary layer of defense. Keep unwanted robocalls away with AI detection.", R.drawable.ic_spam_block),
+        Triple("Detailed Analytics", "Track your protection history and auto-reply activity in real-time.", R.drawable.ic_blocked_call)
     )
     var currentPage by remember { mutableStateOf(0) }
 

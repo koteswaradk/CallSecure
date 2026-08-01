@@ -10,7 +10,6 @@ import javax.inject.Inject
 
 class HandleCallUseCase @Inject constructor(
     private val detectSpamUseCase: DetectSpamUseCase,
-    private val callLogRepository: CallLogRepository,
     private val contactRepository: ContactRepository,
     private val preferencesManager: PreferencesManager,
     private val modeRepository: ModeRepository,

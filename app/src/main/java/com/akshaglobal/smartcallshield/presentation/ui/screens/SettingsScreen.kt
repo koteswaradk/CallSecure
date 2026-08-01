@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.akshaglobal.smartcallshield.R
+import com.akshaglobal.smartcallshield.data.model.CallMode
 import com.akshaglobal.smartcallshield.util.ReviewUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
@@ -92,6 +93,7 @@ fun SettingsScreen(
     val drivingModeAutoReplyEnabled by viewModel.drivingModeAutoReplyEnabled.collectAsState()
     val spamConfidenceThreshold by viewModel.spamConfidenceThreshold.collectAsState()
     val autoRejectSpam by viewModel.autoRejectSpam.collectAsState()
+    val currentMode by viewModel.currentMode.collectAsState()
     val context = LocalContext.current
     val enabledModesState = callModesViewModel.enabledModes.collectAsState()
     val enabledModes = enabledModesState.value
@@ -132,51 +134,14 @@ fun SettingsScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Spam Detection Section
-        SettingsSectionHeader("Spam Detection")
-        SettingCard(
-            title = "Enable Spam Detection",
-            description = "Use AI to detect spam calls",
-            isEnabled = spamDetectionEnabled,
-            onToggle = { viewModel.setSpamDetectionEnabled(it) },
-            enabled = isAppEnabled // Only enable if app is enabled
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        SettingCard(
-            title = "Auto-Reject Spam",
-            description = "Automatically reject detected spam calls",
-            isEnabled = autoRejectSpam,
-            onToggle = { viewModel.setAutoRejectSpam(it) },
-            enabled = isAppEnabled // Only enable if app is enabled
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            "Confidence Threshold: ${String.format(Locale.getDefault(), "%.1f", spamConfidenceThreshold * 100)}%",
-            modifier = Modifier.padding(8.dp)
-        )
-        Slider(
-            value = spamConfidenceThreshold,
-            onValueChange = { viewModel.setSpamConfidenceThreshold(it) },
-            valueRange = 0.5f..1.0f,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Driving Mode Section
-        SettingsSectionHeader("Driving Mode")
+        // --- PRIMARY FEATURE: DRIVING MODE ---
+        SettingsSectionHeader("Driving Mode & Auto-Reply")
         SettingCard(
             title = "Enable Driving Mode",
             description = "Automatically handle calls while driving",
             isEnabled = drivingModeEnabled,
             onToggle = { viewModel.setDrivingModeEnabled(it) },
-            enabled = isAppEnabled && isDrivingModeValid // Enable only if app is enabled AND Driving mode has contacts
+            enabled = isAppEnabled && isDrivingModeValid && currentMode == CallMode.DRIVING
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -186,7 +151,7 @@ fun SettingsScreen(
             description = "Send SMS automatically to allowed contacts",
             isEnabled = drivingModeAutoReplyEnabled,
             onToggle = { viewModel.setDrivingModeAutoReplyEnabled(it) },
-            enabled = isAppEnabled && drivingModeEnabled
+            enabled = isAppEnabled && currentMode == CallMode.DRIVING && drivingModeEnabled
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -206,7 +171,7 @@ fun SettingsScreen(
                 .padding(8.dp),
             label = { Text("Reply message") },
             maxLines = 5,
-            enabled = isAppEnabled && !drivingModeEnabled,
+            enabled = isAppEnabled && !drivingModeAutoReplyEnabled,
             placeholder = { Text("Enter auto-reply message") },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -223,9 +188,9 @@ fun SettingsScreen(
                 disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
         )
-        if (drivingModeEnabled) {
+        if (drivingModeAutoReplyEnabled) {
             Text(
-                "Disable Driving Mode to edit the auto-reply message.",
+                "Disable Auto-Reply to edit the message.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
@@ -234,9 +199,46 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Call Modes Management Section
+        // --- MODES MANAGEMENT ---
         SettingsSectionHeader("Call Modes Management")
         CallModeManagementCard()
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- SECONDARY FEATURE: SPAM & PROTECTION ---
+        SettingsSectionHeader("Spam & Call Protection")
+        SettingCard(
+            title = "Enable Spam Detection",
+            description = "Use AI to detect spam calls",
+            isEnabled = spamDetectionEnabled,
+            onToggle = { viewModel.setSpamDetectionEnabled(it) },
+            enabled = isAppEnabled
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingCard(
+            title = "Auto-Reject Spam",
+            description = "Automatically reject detected spam calls",
+            isEnabled = autoRejectSpam,
+            onToggle = { viewModel.setAutoRejectSpam(it) },
+            enabled = isAppEnabled
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            "Confidence Threshold: ${String.format(Locale.getDefault(), "%.1f", spamConfidenceThreshold * 100)}%",
+            modifier = Modifier.padding(8.dp)
+        )
+        Slider(
+            value = spamConfidenceThreshold,
+            onValueChange = { viewModel.setSpamConfidenceThreshold(it) },
+            valueRange = 0.5f..1.0f,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 

@@ -282,7 +282,7 @@ private fun NavHostContent(
 @Composable
 fun MainNavigationPreview() {
     val windowSizeClass = rememberWindowSizeClass()
-    com.akshaglobal.smartcallshield.presentation.ui.theme.SmartCallShieldTheme {
+    com.akshaglobal.smartcallshield.presentation.ui.theme.DriveShieldTheme {
         MainNavigationContent(
             navController = rememberNavController(),
             isAppEnabled = true,

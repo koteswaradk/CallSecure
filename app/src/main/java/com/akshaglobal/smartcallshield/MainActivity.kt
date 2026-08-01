@@ -24,7 +24,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import com.akshaglobal.smartcallshield.presentation.ui.navigation.MainNavigation
 import com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.SplashScreen
-import com.akshaglobal.smartcallshield.presentation.ui.theme.SmartCallShieldTheme
+import com.akshaglobal.smartcallshield.presentation.ui.theme.DriveShieldTheme
 import com.akshaglobal.smartcallshield.service.ai.FirstLaunchTrainer
 import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
 import kotlinx.coroutines.CoroutineScope
@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
-            SmartCallShieldTheme {
+            DriveShieldTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -184,9 +184,11 @@ class MainActivity : ComponentActivity() {
             preferencesManager.isAppEnabled.collect { appEnabled ->
                 Log.d(TAG, "Service State Update: appEnabled=$appEnabled")
                 
+                val intent = Intent(this@MainActivity, com.akshaglobal.smartcallshield.service.CallProtectionService::class.java)
                 if (appEnabled) {
-                    val intent = Intent(this@MainActivity, com.akshaglobal.smartcallshield.service.CallProtectionService::class.java)
                     startForegroundService(intent)
+                } else {
+                    stopService(intent)
                 }
             }
         }

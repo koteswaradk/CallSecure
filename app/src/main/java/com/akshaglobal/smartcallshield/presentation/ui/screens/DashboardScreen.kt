@@ -273,7 +273,7 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "SmartAICallShield",
+                            "DriveShield",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -294,6 +294,16 @@ fun DashboardScreen(
                             enabled = true // Always enabled for user interaction
                         )
                     }
+                }
+
+                // NEW: Driving Mode Primary Status Card
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    DrivingStatusCard(
+                        isAppEnabled = isAppEnabled,
+                        currentMode = currentMode,
+                        autoReplyEnabled = viewModel.drivingModeAutoReplyEnabled.collectAsState().value
+                    )
                 }
 
                 // Dialogs (Logic only, UI is triggered by state)
@@ -607,6 +617,68 @@ fun DashboardScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrivingStatusCard(
+    isAppEnabled: Boolean,
+    currentMode: CallMode?,
+    autoReplyEnabled: Boolean
+) {
+    val isDrivingModeActive = isAppEnabled && currentMode == CallMode.DRIVING
+    val statusText = if (!isAppEnabled) "App Disabled"
+    else if (isDrivingModeActive && autoReplyEnabled) "Auto-Reply Active"
+    else if (isDrivingModeActive) "Driving Mode ON (Reply OFF)"
+    else "Driving Mode Ready"
+    
+    val containerColor = if (isDrivingModeActive && autoReplyEnabled) 
+        com.akshaglobal.smartcallshield.presentation.ui.theme.Warning.copy(alpha = 0.15f)
+    else MaterialTheme.colorScheme.surfaceVariant
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, if (isDrivingModeActive) com.akshaglobal.smartcallshield.presentation.ui.theme.Warning else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        if (isDrivingModeActive) com.akshaglobal.smartcallshield.presentation.ui.theme.Warning.copy(alpha = 0.2f)
+                        else MaterialTheme.colorScheme.surface,
+                        androidx.compose.foundation.shape.CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_mode_driving),
+                    contentDescription = null,
+                    tint = if (isDrivingModeActive) com.akshaglobal.smartcallshield.presentation.ui.theme.Warning else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = statusText,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDrivingModeActive) com.akshaglobal.smartcallshield.presentation.ui.theme.Warning else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = if (isDrivingModeActive && autoReplyEnabled) "SMS will be sent to allowed contacts"
+                           else if (isDrivingModeActive) "Auto-Reply is disabled in settings"
+                           else "Switch to Driving Mode to enable auto-replies",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

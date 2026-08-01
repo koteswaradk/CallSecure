@@ -19,7 +19,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -40,7 +42,18 @@ class CallProtectionService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand invoked")
 
-        val initialNotification = createNotification("Normal", false)
+        // Sync check to avoid starting foreground if app is disabled
+        val appEnabled = runBlocking { preferencesManager.isAppEnabled.first() }
+        if (!appEnabled) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        val initialMode = runBlocking { preferencesManager.currentMode.first() }
+        val drivingEnabled = runBlocking { preferencesManager.drivingModeEnabled.first() }
+        val autoReplyEnabled = runBlocking { preferencesManager.drivingModeAutoReplyEnabled.first() }
+
+        val initialNotification = createNotification(initialMode, drivingEnabled, autoReplyEnabled)
         try {
             startForeground(NOTIFICATION_ID, initialNotification)
         } catch (e: Exception) {
@@ -60,22 +73,22 @@ class CallProtectionService : Service() {
                 preferencesManager.drivingModeEnabled,
                 preferencesManager.drivingModeAutoReplyEnabled
             ) { appEnabled, mode, drivingEnabled, autoReplyEnabled ->
-                val drivingWithAutoReply = mode.uppercase() == "DRIVING" && drivingEnabled && autoReplyEnabled
-                StateConfig(appEnabled, mode, drivingWithAutoReply)
+                StateConfig(appEnabled, mode, drivingEnabled, autoReplyEnabled)
             }.collect { config ->
                 if (!config.appEnabled) {
                     Log.d(TAG, "App disabled, stopping CallProtectionService")
+                    stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 } else {
                     Log.d(TAG, "Updating notification for mode: ${config.mode}")
-                    val updatedNotification = createNotification(config.mode, config.drivingWithAutoReply)
+                    val updatedNotification = createNotification(config.mode, config.drivingEnabled, config.autoReplyEnabled)
                     notificationManager.notify(NOTIFICATION_ID, updatedNotification)
                 }
             }
         }
     }
 
-    private fun createNotification(mode: String, drivingWithAutoReply: Boolean): Notification {
+    private fun createNotification(mode: String, drivingEnabled: Boolean, autoReplyEnabled: Boolean): Notification {
         val contentIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
@@ -97,17 +110,19 @@ class CallProtectionService : Service() {
         )
 
         val modeName = mode.lowercase().replaceFirstChar { it.uppercase() }
-        val title = "SmartCallShield: $modeName Mode"
+        val title = "DriveShield: $modeName Mode"
         
-        val description = if (drivingWithAutoReply) {
-            getString(R.string.notif_driving_mode_desc)
-        } else {
-            when (mode.uppercase()) {
-                "FAMILY" -> getString(R.string.mode_family_desc)
-                "DRIVING" -> getString(R.string.mode_driving_desc)
-                "EMERGENCY" -> getString(R.string.mode_emergency_desc)
-                else -> getString(R.string.notif_call_protection_desc)
+        val description = when (mode.uppercase()) {
+            "DRIVING" -> {
+                if (drivingEnabled && autoReplyEnabled) {
+                    getString(R.string.notif_driving_mode_desc)
+                } else {
+                    getString(R.string.notif_driving_mode_no_reply_desc)
+                }
             }
+            "FAMILY" -> getString(R.string.mode_family_desc)
+            "EMERGENCY" -> getString(R.string.mode_emergency_desc)
+            else -> getString(R.string.notif_call_protection_desc)
         }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -131,7 +146,8 @@ class CallProtectionService : Service() {
     private data class StateConfig(
         val appEnabled: Boolean,
         val mode: String,
-        val drivingWithAutoReply: Boolean
+        val drivingEnabled: Boolean,
+        val autoReplyEnabled: Boolean
     )
 
     private fun createNotificationChannel() {
@@ -151,6 +167,7 @@ class CallProtectionService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        notificationManager.cancel(NOTIFICATION_ID)
         scope.cancel()
         Log.d(TAG, "CallProtectionService destroyed")
     }

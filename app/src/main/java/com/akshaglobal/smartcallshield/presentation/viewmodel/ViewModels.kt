@@ -60,6 +60,9 @@ class DashboardViewModel @Inject constructor(
     private val _drivingModeEnabled = MutableStateFlow(false)
     val drivingModeEnabled = _drivingModeEnabled.asStateFlow()
 
+    private val _drivingModeAutoReplyEnabled = MutableStateFlow(false)
+    val drivingModeAutoReplyEnabled = _drivingModeAutoReplyEnabled.asStateFlow()
+
     init {
         viewModelScope.launch {
             // Observe mode changes
@@ -69,6 +72,13 @@ class DashboardViewModel @Inject constructor(
                 } catch (e: Exception) {
                     CallMode.NORMAL
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            // Observe driving mode auto-reply enabled status
+            preferencesManager.drivingModeAutoReplyEnabled.collect { enabled ->
+                _drivingModeAutoReplyEnabled.value = enabled
             }
         }
 
@@ -124,6 +134,9 @@ class DashboardViewModel @Inject constructor(
             preferencesManager.setCurrentMode(mode.name)
             _currentMode.value = mode
             
+            // Sync with driving mode setting
+            preferencesManager.setDrivingModeEnabled(mode == CallMode.DRIVING)
+            
             // Sync with mode repository
             val allModes = modeRepository.getAllModes().first()
             val modeToActivate = allModes.find { it.name.equals(mode.name, ignoreCase = true) }
@@ -136,6 +149,12 @@ class DashboardViewModel @Inject constructor(
             val newState = !_isAppEnabled.value
             preferencesManager.setAppEnabled(newState)
             _isAppEnabled.value = newState
+            
+            // Reset driving states when app is disabled
+            if (!newState) {
+                preferencesManager.setDrivingModeEnabled(false)
+                preferencesManager.setDrivingModeAutoReplyEnabled(false)
+            }
         }
     }
 }
@@ -224,7 +243,20 @@ class SettingsViewModel @Inject constructor(
     private val _hasDrivingContacts = MutableStateFlow(false)
     val hasDrivingContacts = _hasDrivingContacts.asStateFlow()
 
+    private val _currentMode = MutableStateFlow<CallMode?>(null)
+    val currentMode = _currentMode.asStateFlow()
+
     init {
+        viewModelScope.launch {
+            // Observe mode changes
+            preferencesManager.currentMode.collect { mode ->
+                _currentMode.value = try {
+                    CallMode.valueOf(mode)
+                } catch (e: Exception) {
+                    CallMode.NORMAL
+                }
+            }
+        }
         viewModelScope.launch {
             contactRepository.getContactsByCategory("DRIVING").collect { contacts ->
                 _hasDrivingContacts.value = contacts.isNotEmpty()
@@ -283,6 +315,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.setDrivingModeEnabled(enabled)
             _drivingModeEnabled.value = enabled
+            
+            // Sync with dashboard mode selection
+            if (enabled) {
+                preferencesManager.setCurrentMode(CallMode.DRIVING.name)
+            } else {
+                preferencesManager.setCurrentMode(CallMode.NORMAL.name)
+            }
         }
     }
 

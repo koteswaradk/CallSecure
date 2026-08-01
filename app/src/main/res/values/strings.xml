@@ -1,11 +1,11 @@
 <resources>
     <!-- App Info -->
-    <string name="app_name">SmartCallShield</string>
+    <string name="app_name">DriveShield</string>
     <string name="app_version">1.0.0</string>
-    <string name="app_description">AI-powered spam call blocker with privacy-first design</string>
+    <string name="app_description">Automatic SMS Auto-Reply and Smart Driving Assistant with AI Spam Protection</string>
 
     <!-- Dashboard Screen -->
-    <string name="dashboard_title">SmartCallShield</string>
+    <string name="dashboard_title">DriveShield</string>
     <string name="dashboard_call_mode">Call Mode</string>
     <string name="dashboard_statistics">Today\'s Statistics</string>
     <string name="dashboard_premium_badge">✨ Premium Features Unlocked</string>
@@ -113,14 +113,15 @@
     <string name="msg_contact_deleted">Contact deleted successfully</string>
     <string name="msg_invalid_phone_number">Invalid phone number</string>
     <string name="msg_permission_denied">Permission denied</string>
-    <string name="msg_requires_permission">This feature requires permission</string>
+    <string name="msg_requires_permission">DriveShield requires these permissions to function correctly.</string>
 
     <!-- Notifications -->
-    <string name="notif_call_protection_active">SmartCallShield Protection Active</string>
+    <string name="notif_call_protection_active">DriveShield Protection Active</string>
     <string name="notif_call_protection_desc">Monitoring for incoming calls and blocking spam.</string>
     <string name="notif_action_disable">Disable Protection</string>
     <string name="notif_driving_mode_active">Driving Mode Active</string>
     <string name="notif_driving_mode_desc">Auto reply SMS will be sent to the mode contacts saved if the call comes from them</string>
+    <string name="notif_driving_mode_no_reply_desc">Driving Mode active. Auto-reply SMS is disabled in settings.</string>
     <string name="notif_call_blocked">Call Blocked</string>
     <string name="notif_spam_detected">Spam Detected</string>
     <string name="notif_sms_sent">Auto-Reply Sent</string>
@@ -139,11 +140,11 @@
     <string name="perm_location">Location Access</string>
 
     <!-- About -->
-    <string name="about_title">About SmartCallShield</string>
+    <string name="about_title">About DriveShield</string>
     <string name="about_version">Version %s</string>
     <string name="about_privacy_policy">Privacy Policy</string>
     <string name="about_terms">Terms of Service</string>
     <string name="about_github">GitHub</string>
-    <string name="about_email">support@smartcallshield.com</string>
+    <string name="about_email">support@driveshield.com</string>
 </resources>
 
