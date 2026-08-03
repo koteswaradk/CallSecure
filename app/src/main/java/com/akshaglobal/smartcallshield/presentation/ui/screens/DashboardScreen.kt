@@ -1,10 +1,7 @@
 package com.akshaglobal.smartcallshield.presentation.ui.screens
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -55,7 +53,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -66,8 +63,27 @@ import androidx.core.net.toUri
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import com.akshaglobal.smartcallshield.presentation.ui.components.ActivityStatCard
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import androidx.compose.ui.viewinterop.AndroidView
+import android.view.ViewGroup
+import android.content.Context
+import androidx.compose.ui.graphics.toArgb
 import com.akshaglobal.smartcallshield.presentation.ui.components.ModeButton
-import com.akshaglobal.smartcallshield.presentation.ui.components.StatisticsCard
 
 @Composable
 fun DashboardScreen(
@@ -75,14 +91,9 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
     callModesViewModel: CallModesViewModel = hiltViewModel()
 ) {
-    // Add this state to remember the last dialed number for fallback
-    var lastDialAttemptedNumber by remember { mutableStateOf("") }
     val currentMode by viewModel.currentMode.collectAsState()
     val isAppEnabled by viewModel.isAppEnabled.collectAsState()
     val isPremium by viewModel.isPremium.collectAsState()
-    val blockedCount by viewModel.blockedCount.collectAsState()
-    val spamCount by viewModel.spamCount.collectAsState()
-    val drivingReplies by viewModel.drivingRepliesCount.collectAsState()
     val modes by callModesViewModel.modes.collectAsState()
     val enabledModes by callModesViewModel.enabledModes.collectAsState()
     var showModeErrorDialog by remember { mutableStateOf<String?>(null) }
@@ -92,13 +103,7 @@ fun DashboardScreen(
     var showModeChangeDialog by remember { mutableStateOf(false) }
     var pendingMode: CallMode? by remember { mutableStateOf(null) }
     val deviceContacts by callModesViewModel.deviceContacts.collectAsState()
-    // Fix: lastSelectedMode should be declared here, nullable, and initialized with currentMode
     var lastSelectedMode by remember { mutableStateOf<CallMode?>(currentMode) }
-    var showDialPad by rememberSaveable { mutableStateOf(false) }
-
-    // Persistent state for search and dialer
-    var searchQuery by rememberSaveable { mutableStateOf("") }
-    var dialNumber by rememberSaveable { mutableStateOf("") }
 
     // Sync lastSelectedMode with currentMode whenever currentMode changes
     LaunchedEffect(currentMode) {
@@ -113,156 +118,22 @@ fun DashboardScreen(
         callModesViewModel.syncModesAndContacts()
     }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val telecomManager = context.getSystemService(android.content.Context.TELECOM_SERVICE) as android.telecom.TelecomManager
-    var isDefaultDialer by remember { mutableStateOf(telecomManager.defaultDialerPackage == context.packageName) }
-    val deviceContactsList = deviceContacts // Already collected from ViewModel
-    var showPermissionDeniedDialog by remember { mutableStateOf(false) }
-
-    // Permission launcher for CALL_PHONE
-    val callPhonePermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            if (!granted) {
-                showPermissionDeniedDialog = true
-            }
-        }
-    )
-
-    // Helper to check permission
-    fun hasCallPhonePermission(): Boolean {
-        return androidx.core.content.ContextCompat.checkSelfPermission(
-            context, Manifest.permission.CALL_PHONE
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    // State to store a pending number to dial after default dialer is set (robust to process death)
-    var pendingDialNumber by rememberSaveable { mutableStateOf("") }
-    // Launcher for default dialer intent
-    val defaultDialerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-        onResult = {
-            val telecomManager = context.getSystemService(android.content.Context.TELECOM_SERVICE) as android.telecom.TelecomManager
-            isDefaultDialer = telecomManager.defaultDialerPackage == context.packageName
-            Log.d("DIALER_FLOW", "Result callback: isDefaultDialer=$isDefaultDialer, pendingDialNumber=$pendingDialNumber")
-            if (isDefaultDialer && pendingDialNumber.isNotBlank()) {
-                if (androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_CALL).apply {
-                        data = ("tel:" + pendingDialNumber).toUri()
-                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    Log.d("DIALER_FLOW", "Calling number: $pendingDialNumber")
-                    context.startActivity(intent)
-                } else {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                        data = ("tel:" + pendingDialNumber).toUri()
-                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    Log.d("DIALER_FLOW", "Opening dialer for number: $pendingDialNumber")
-                    context.startActivity(intent)
-                }
-                pendingDialNumber = ""
-            }
-        }
-    )
-    var showSetDefaultDialerDialog by remember { mutableStateOf(false) }
-
-    // Move dialNumberAndCall to this scope so it is accessible everywhere in the dialog
-    val dialNumberAndCall: (String) -> Unit = { number ->
-        if (number.isBlank()) {
-            // Do nothing if blank
-        } else {
-            lastDialAttemptedNumber = number
-            if (!isDefaultDialer) {
-                pendingDialNumber = number // Store for after default dialer set
-                showSetDefaultDialerDialog = true
-            } else if (isDefaultDialer) {
-                if (hasCallPhonePermission()) {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_CALL).apply {
-                        data = ("tel:" + number).toUri()
-                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(intent)
-                } else {
-                    // Request permission
-                    callPhonePermissionLauncher.launch(Manifest.permission.CALL_PHONE)
-                }
-            } else {
-                val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                    data = ("tel:" + number).toUri()
-                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                context.startActivity(intent)
-            }
-        }
-    }
-
-    // Show dialog to prompt user to set as default dialer
-    if (showSetDefaultDialerDialog) {
-        AlertDialog(
-            onDismissRequest = { showSetDefaultDialerDialog = false },
-            title = { Text("Set as Default Dialer", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
-            text = { Text("To place calls directly, please set SmartCallShield as your device's default phone app.", color = MaterialTheme.colorScheme.onSurface) },
-            containerColor = MaterialTheme.colorScheme.surface,
-            confirmButton = {
-                Button(onClick = {
-                    showSetDefaultDialerDialog = false
-                    val dialerIntent = android.content.Intent(android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).apply {
-                        putExtra(android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, context.packageName)
-                    }
-                    defaultDialerLauncher.launch(dialerIntent)
-                }) { Text("Set as Default") }
-            },
-            dismissButton = {
-                Button(onClick = {
-                    showSetDefaultDialerDialog = false
-                    pendingDialNumber = "" // Clear pending if cancelled
-                    if (lastDialAttemptedNumber.isNotBlank()) {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-                            data = ("tel:" + lastDialAttemptedNumber).toUri()
-                            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        context.startActivity(intent)
-                    }
-                }) { Text("Dial") }
-            },
-            modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
-        )
-    }
-
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showDialPad = !showDialPad },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_call_block), // Using existing dial-like icon
-                    contentDescription = "Dial Pad",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+        containerColor = MaterialTheme.colorScheme.surface
     ) { paddingValues ->
-        val filteredContacts = remember(searchQuery, deviceContactsList) {
-            val filtered = if (searchQuery.isBlank()) deviceContactsList
-            else deviceContactsList.filter {
-                it.displayName.contains(searchQuery, ignoreCase = true) ||
-                it.phoneNumber.contains(searchQuery, ignoreCase = true)
-            }
-            filtered.distinctBy { it.phoneNumber }
-        }
-
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter // Center content for wide screens
+        ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 600.dp), // Professional constraint for tablets
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = 16.dp,
                     top = 4.dp,
-                    bottom = paddingValues.calculateBottomPadding() + (if (showDialPad) 400.dp else 16.dp)
+                    bottom = paddingValues.calculateBottomPadding() + 16.dp
                 )
             ) {
                 // Header
@@ -450,175 +321,258 @@ fun DashboardScreen(
                     }
                 }
 
+                // NEW: Activity Overview Section
+                item {
+                    ActivityOverviewSection(viewModel)
+                }
+
                 item { Spacer(modifier = Modifier.height(24.dp)) }
 
-                // SEARCH CONTACTS HEADER
-                item {
-                    Text("Search Contacts", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    androidx.compose.material3.OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        label = { Text("Search by name or number") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                item { Spacer(modifier = Modifier.height(24.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityOverviewSection(viewModel: DashboardViewModel) {
+    val totalArrivals by viewModel.totalArrivals.collectAsState()
+    val answeredCalls by viewModel.answeredCalls.collectAsState()
+    val blocked by viewModel.blocked.collectAsState()
+    val autoReply by viewModel.autoReply.collectAsState()
+    
+    val receivedTrends by viewModel.receivedTrends.collectAsState()
+    val allowedTrends by viewModel.allowedTrends.collectAsState()
+    val blockedTrends by viewModel.blockedTrends.collectAsState()
+    val replyTrends by viewModel.replyTrends.collectAsState()
+
+    val isCompact = LocalConfiguration.current.screenWidthDp < 360
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+    ) {
+        if (isCompact) {
+            // 2x2 Grid for very narrow screens
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ActivityStatCard(
+                        label = "Received",
+                        value = totalArrivals.toString(),
+                        painter = painterResource(id = R.drawable.ic_mode_normal),
+                        iconTint = Color(0xFF3B82F6),
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    ActivityStatCard(
+                        label = "Allowed",
+                        value = answeredCalls.toString(),
+                        painter = painterResource(id = R.drawable.ic_mode_family),
+                        iconTint = Color(0xFF10B981),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-
-                // Search Results List
-                items(filteredContacts) { contact ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .background(if (dialNumber == contact.phoneNumber) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
-                            .clickable {
-                                dialNumberAndCall(contact.phoneNumber)
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_mode_normal),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(contact.displayName.ifEmpty { "Unknown" }, fontWeight = FontWeight.Medium)
-                            Text(contact.phoneNumber, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-
-                // Permission Denied Dialog
-                item {
-                    if (showPermissionDeniedDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showPermissionDeniedDialog = false },
-                            title = { Text("Permission Required", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
-                            text = { Text("Please grant the CALL_PHONE permission to place calls directly from this app.", color = MaterialTheme.colorScheme.onSurface) },
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            confirmButton = {
-                                Button(onClick = { showPermissionDeniedDialog = false }) { Text("OK") }
-                            },
-                            modifier = Modifier.fillMaxWidth(0.95f).border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge)
-                        )
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    ActivityStatCard(
+                        label = "Blocked",
+                        value = blocked.toString(),
+                        painter = painterResource(id = R.drawable.ic_blocked_call),
+                        iconTint = Color(0xFFEF4444),
+                        modifier = Modifier.weight(1f)
+                    )
+                    ActivityStatCard(
+                        label = "Replies",
+                        value = autoReply.toString(),
+                        painter = painterResource(id = R.drawable.ic_driving_message),
+                        iconTint = Color(0xFFF59E0B),
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
+        } else {
+            // standard 4-column row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                ActivityStatCard(
+                    label = "Received",
+                    value = totalArrivals.toString(),
+                    painter = painterResource(id = R.drawable.ic_mode_normal),
+                    iconTint = Color(0xFF3B82F6),
+                    modifier = Modifier.weight(1f)
+                )
+                ActivityStatCard(
+                    label = "Allowed",
+                    value = answeredCalls.toString(),
+                    painter = painterResource(id = R.drawable.ic_mode_family),
+                    iconTint = Color(0xFF10B981),
+                    modifier = Modifier.weight(1f)
+                )
+                ActivityStatCard(
+                    label = "Blocked",
+                    value = blocked.toString(),
+                    painter = painterResource(id = R.drawable.ic_blocked_call),
+                    iconTint = Color(0xFFEF4444),
+                    modifier = Modifier.weight(1f)
+                )
+                ActivityStatCard(
+                    label = "Replies",
+                    value = autoReply.toString(),
+                    painter = painterResource(id = R.drawable.ic_driving_message),
+                    iconTint = Color(0xFFF59E0B),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
 
-            // Dialer pad UI (Overlay at the bottom)
-            if (showDialPad) {
-                Card(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(bottom = paddingValues.calculateBottomPadding()),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Activity Overview Chart Container
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Text(
+                        text = "Activity Overview",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = dialNumber,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1
-                            )
-                            IconButton(onClick = { showDialPad = false }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_backspace), // Reuse backspace or add a close icon
-                                    contentDescription = "Close",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        val dialPadRows = listOf(
-                            listOf("1", "2", "3"),
-                            listOf("4", "5", "6"),
-                            listOf("7", "8", "9"),
-                            listOf("*", "0", "#")
-                        )
-                        dialPadRows.forEach { row ->
-                            Row(
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                row.forEach { symbol ->
-                                    Button(
-                                        onClick = { dialNumber += symbol },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(4.dp)
-                                            .height(56.dp),
-                                        shape = MaterialTheme.shapes.medium,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.surface,
-                                            contentColor = MaterialTheme.colorScheme.primary
-                                        ),
-                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                                    ) {
-                                        Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Button(
-                                onClick = { dialNumberAndCall(dialNumber) },
-                                enabled = dialNumber.isNotBlank(),
-                                modifier = Modifier.height(56.dp).width(140.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_call_block),
-                                    contentDescription = "Dial",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Dial")
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            IconButton(
-                                onClick = { if (dialNumber.isNotEmpty()) dialNumber = dialNumber.dropLast(1) }
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_backspace),
-                                    contentDescription = "Delete",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
+                            Text("Today", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                DashboardTrendsGraph(
+                    receivedTrends = receivedTrends,
+                    allowedTrends = allowedTrends,
+                    blockedTrends = blockedTrends,
+                    replyTrends = replyTrends
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Legend (2x2 Grid for perfect alignment)
+                // Legend Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    LegendItem("Received", Color(0xFF3B82F6))
+                    LegendItem("Allowed", Color(0xFF10B981))
+                    LegendItem("Blocked", Color(0xFFEF4444))
+                    LegendItem("Replies", Color(0xFFF59E0B))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DashboardTrendsGraph(
+    receivedTrends: List<Pair<String, Int>>,
+    allowedTrends: List<Pair<String, Int>>,
+    blockedTrends: List<Pair<String, Int>>,
+    replyTrends: List<Pair<String, Int>>
+) {
+    val surfaceColor = Color.Transparent.toArgb()
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+    
+    val colors = listOf(
+        Color(0xFF3B82F6), // Received
+        Color(0xFF10B981), // Allowed
+        Color(0xFFEF4444), // Blocked
+        Color(0xFFF59E0B)  // Replies
+    )
+
+    AndroidView(
+        factory = { ctx: Context ->
+            LineChart(ctx).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    300
+                )
+                setBackgroundColor(surfaceColor)
+                description.isEnabled = false
+                axisRight.isEnabled = false
+                axisLeft.apply {
+                    textColor = onSurfaceColor
+                    setDrawGridLines(true)
+                    gridColor = onSurfaceColor
+                    gridLineWidth = 0.5f
+                    axisMinimum = 0f
+                }
+                xAxis.apply {
+                    position = XAxis.XAxisPosition.BOTTOM
+                    textColor = onSurfaceColor
+                    setDrawGridLines(false)
+                    granularity = 4f
+                }
+                legend.isEnabled = false
+            }
+        },
+        update = { chart: LineChart ->
+            val dataSets = mutableListOf<LineDataSet>()
+            
+            val allTrends = listOf(receivedTrends, allowedTrends, blockedTrends, replyTrends)
+            val labels = listOf("Received", "Allowed", "Blocked", "Replies")
+            
+            allTrends.forEachIndexed { index, trends ->
+                val entries = trends.mapIndexed { idx, pair ->
+                    Entry(idx.toFloat(), pair.second.toFloat())
+                }
+                val dataSet = LineDataSet(entries, labels[index]).apply {
+                    color = colors[index].toArgb()
+                    setCircleColor(colors[index].toArgb())
+                    lineWidth = 2f
+                    circleRadius = 2.5f
+                    setDrawValues(false)
+                    setDrawFilled(index == 0) // Only fill the main "Received" set
+                    if (index == 0) {
+                        fillColor = colors[index].copy(alpha = 0.1f).toArgb()
+                    }
+                    mode = LineDataSet.Mode.CUBIC_BEZIER
+                }
+                dataSets.add(dataSet)
+            }
+            
+            chart.data = LineData(dataSets.toList())
+            chart.xAxis.valueFormatter = IndexAxisValueFormatter(receivedTrends.map { it.first })
+            chart.invalidate()
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+    )
+}
+
+@Composable
+private fun LegendItem(label: String, color: Color, modifier: Modifier = Modifier) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

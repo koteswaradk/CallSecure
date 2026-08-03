@@ -26,27 +26,24 @@ class HandleCallUseCase @Inject constructor(
         println("[DEBUG] Current mode: $currentMode, Incoming: $normalizedNumber")
 
         if (currentMode == "DRIVING") {
-            val drivingEnabled = preferencesManager.drivingModeEnabled.first()
             val autoReplyEnabled = preferencesManager.drivingModeAutoReplyEnabled.first()
-            if (drivingEnabled) {
-                val drivingContacts = contactRepository.getContactsByCategory("DRIVING").first()
-                val isDrivingContact = drivingContacts.any { c ->
-                    val contactNormalized = c.phoneNumber.replace(Regex("[^+0-9]"), "")
-                    contactNormalized.endsWith(normalizedNumber) || normalizedNumber.endsWith(contactNormalized)
-                }
-                
-                return if (isDrivingContact) {
-                    if (autoReplyEnabled) {
-                        println("[DEBUG] Driving contact detected and Auto-Reply ON. Decision: REPLY_SMS")
-                        CallDecision.REPLY_SMS
-                    } else {
-                        println("[DEBUG] Driving contact detected but Auto-Reply OFF. Decision: ALLOW")
-                        CallDecision.ALLOW
-                    }
+            val drivingContacts = contactRepository.getContactsByCategory("DRIVING").first()
+            val isDrivingContact = drivingContacts.any { c ->
+                val contactNormalized = c.phoneNumber.replace(Regex("[^+0-9]"), "")
+                contactNormalized.endsWith(normalizedNumber) || normalizedNumber.endsWith(contactNormalized)
+            }
+            
+            if (isDrivingContact) {
+                return if (autoReplyEnabled) {
+                    println("[DEBUG] Driving contact detected and Auto-Reply ON. Decision: REPLY_SMS")
+                    CallDecision.REPLY_SMS
                 } else {
-                    println("[DEBUG] Not a driving contact in Driving Mode. Decision: REJECT")
-                    CallDecision.REJECT
+                    println("[DEBUG] Driving contact detected but Auto-Reply OFF. Decision: ALLOW")
+                    CallDecision.ALLOW
                 }
+            } else {
+                println("[DEBUG] Not a driving contact in Driving Mode. Decision: REJECT")
+                return CallDecision.REJECT
             }
         }
 

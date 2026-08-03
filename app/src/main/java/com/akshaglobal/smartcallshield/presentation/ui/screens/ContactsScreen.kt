@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
@@ -61,17 +64,23 @@ fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surface),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
-        Text(
-            "Contacts Management",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(16.dp)
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .widthIn(max = 600.dp)
+        ) {
+            // Header
+            Text(
+                "Contacts Management",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(16.dp)
+            )
 
         // Tab Row
         TabRow(selectedTabIndex = selectedTab) {
@@ -130,6 +139,7 @@ fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
         )
     }
 }
+}
 
 @Composable
 private fun ContactsList(
@@ -147,7 +157,13 @@ private fun ContactsList(
             Text("No contacts found", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     } else {
-        LazyColumn(modifier = Modifier.padding(8.dp)) {
+        val configuration = LocalConfiguration.current
+        val columns = if (configuration.screenWidthDp >= 600) 2 else 1
+        
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            modifier = Modifier.padding(8.dp)
+        ) {
             items(contacts) { contact ->
                 ContactCard(contact) {
                     onDelete(contact)

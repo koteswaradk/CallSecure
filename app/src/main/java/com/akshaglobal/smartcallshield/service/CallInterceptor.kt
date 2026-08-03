@@ -40,6 +40,10 @@ class CallInterceptor : BroadcastReceiver() {
         private var isCurrentlyRinging = false
         @Volatile
         private var currentRingingNumber: String? = null
+        @Volatile
+        private var currentRingingDecision: CallDecision? = null
+        @Volatile
+        private var hasLoggedCurrentCall = false
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -65,28 +69,101 @@ class CallInterceptor : BroadcastReceiver() {
                 val incomingNumberRaw = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
                 val incomingNumber = PhoneNumberUtils.normalize(incomingNumberRaw)
 
+                Log.d(TAG, "Phone State changed to: $state for number: $incomingNumber")
+
                 when (state) {
                     TelephonyManager.EXTRA_STATE_RINGING -> {
-                        // Avoid handling the same call multiple times (Android sends multiple RINGING broadcasts)
-                        if (currentRingingNumber != incomingNumber) {
+                        // Ignore empty numbers if we are already ringing or have logged this call
+                        if (incomingNumber.isBlank() && isCurrentlyRinging) {
+                            Log.d(TAG, "Empty number during ringing, ignoring.")
+                            return
+                        }
+
+                        // Avoid handling the same call multiple times
+                        if (currentRingingNumber != incomingNumber || !isCurrentlyRinging) {
                             isCurrentlyRinging = true
                             currentRingingNumber = incomingNumber
+                            hasLoggedCurrentCall = false
                             handleIncomingCall(context, incomingNumber)
                         } else {
                             Log.d(TAG, "Already handling ringing for $incomingNumber, skipping duplicate broadcast.")
                         }
                     }
-                    TelephonyManager.EXTRA_STATE_OFFHOOK, TelephonyManager.EXTRA_STATE_IDLE -> {
+                    TelephonyManager.EXTRA_STATE_OFFHOOK -> {
+                        // User answered the call
+                        if (isCurrentlyRinging && currentRingingDecision == CallDecision.ALLOW && !hasLoggedCurrentCall) {
+                            logAnsweredCall(currentRingingNumber ?: incomingNumber)
+                            hasLoggedCurrentCall = true
+                        }
+                        isCurrentlyRinging = false
+                    }
+                    TelephonyManager.EXTRA_STATE_IDLE -> {
+                        // If it was ringing and we haven't logged it yet, it's a missed call
+                        if (isCurrentlyRinging && !hasLoggedCurrentCall && currentRingingDecision != null) {
+                            val isAllowedDecision = currentRingingDecision == CallDecision.ALLOW || 
+                                                  (currentRingingDecision == CallDecision.REPLY_SMS && !hasLoggedCurrentCall)
+                            
+                            if (isAllowedDecision) {
+                                logMissedCall(currentRingingNumber ?: "")
+                            }
+                        }
                         isCurrentlyRinging = false
                         currentRingingNumber = null
+                        currentRingingDecision = null
+                        hasLoggedCurrentCall = false
                     }
                 }
             }
         }
     }
 
+    private fun logMissedCall(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        val scope = CoroutineScope(Dispatchers.IO)
+        scope.launch {
+            try {
+                Log.d(TAG, "Logging missed call for: $phoneNumber")
+                callLogRepository.addCallLog(
+                    CallLogEntity(
+                        phoneNumber = phoneNumber,
+                        timestamp = System.currentTimeMillis(),
+                        callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                        duration = 0, // Missed
+                        isSpam = false,
+                        wasBlocked = false
+                    )
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error logging missed call", e)
+            }
+        }
+    }
+
+    private fun logAnsweredCall(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        
+        val scope = CoroutineScope(Dispatchers.IO)
+        scope.launch {
+            try {
+                Log.d(TAG, "Logging answered call for: $phoneNumber")
+                callLogRepository.addCallLog(
+                    CallLogEntity(
+                        phoneNumber = phoneNumber,
+                        timestamp = System.currentTimeMillis(),
+                        callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                        duration = 1, // Set > 0 to count as answered/allowed
+                        isSpam = false,
+                        wasBlocked = false
+                    )
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error logging answered call", e)
+            }
+        }
+    }
+
     private fun handleIncomingCall(context: Context, phoneNumber: String?) {
-        if (phoneNumber == null) return
+        if (phoneNumber.isNullOrBlank()) return
 
         val scope = CoroutineScope(Dispatchers.Default)
         scope.launch {
@@ -95,18 +172,29 @@ class CallInterceptor : BroadcastReceiver() {
                 if (!appEnabled) return@launch
 
                 val decision = handleCallUseCase.invoke(phoneNumber)
+                currentRingingDecision = decision
                 val e164Number = PhoneNumberUtils.normalize(phoneNumber)
 
-                // Log the call
-                callLogRepository.addCallLog(
-                    CallLogEntity(
-                        phoneNumber = phoneNumber,
-                        timestamp = System.currentTimeMillis(),
-                        callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
-                        isSpam = decision == CallDecision.REJECT || decision == CallDecision.SILENT,
-                        wasBlocked = decision == CallDecision.REJECT || decision == CallDecision.SILENT
+                // Log ONLY if blocked or auto-reply. 
+                // Allowed calls are logged in OFFHOOK when answered.
+                val isBlockedDecision = decision == CallDecision.REJECT || 
+                                      decision == CallDecision.SILENT || 
+                                      decision == CallDecision.REPLY_SMS
+                
+                if (isBlockedDecision) {
+                    Log.d(TAG, "Logging blocked call: $phoneNumber")
+                    callLogRepository.addCallLog(
+                        CallLogEntity(
+                            phoneNumber = phoneNumber,
+                            timestamp = System.currentTimeMillis(),
+                            callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                            duration = 0,
+                            isSpam = isBlockedDecision,
+                            wasBlocked = isBlockedDecision
+                        )
                     )
-                )
+                    hasLoggedCurrentCall = true
+                }
 
                 when (decision) {
                     CallDecision.REJECT -> {
@@ -120,11 +208,11 @@ class CallInterceptor : BroadcastReceiver() {
                     CallDecision.REPLY_SMS -> {
                         Log.d(TAG, "Waiting 5 seconds before replying with SMS and rejecting call from: $phoneNumber")
                         
-                        // Wait for 5 seconds
+                        // Wait for 5 seconds (grace period for user to answer)
                         delay(5000)
                         
-                        // Ensure it's the same number that triggered the event
-                        if (currentRingingNumber == e164Number) {
+                        // Ensure it's the same number AND still ringing
+                        if (currentRingingNumber == e164Number && isCurrentlyRinging) {
                             val replyMessage = preferencesManager.drivingModeAutoReply.first()
                             
                             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.SEND_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -147,11 +235,11 @@ class CallInterceptor : BroadcastReceiver() {
                             }
                             rejectCall(context)
                         } else {
-                            Log.d(TAG, "Number changed or was cleared before delay finished, skipping auto-reply.")
+                            Log.d(TAG, "Call answered or cleared during delay, skipping auto-reply and rejection.")
                         }
                     }
                     CallDecision.ALLOW -> {
-                        Log.d(TAG, "Allowing call from: $phoneNumber")
+                        Log.d(TAG, "Allowing call from: $phoneNumber, waiting for answer to log.")
                     }
                 }
             } catch (e: Exception) {

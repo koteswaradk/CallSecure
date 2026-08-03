@@ -31,8 +31,8 @@ enum class TrendFilter { TODAY, WEEK, MONTH, OVERALL }
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
-    private val analyticsRepository: AnalyticsRepository,
     private val getAnalyticsUseCase: GetAnalyticsUseCase,
+    private val getCallHistoryUseCase: GetCallHistoryUseCase,
     private val modeRepository: ModeRepository
 ) : ViewModel() {
 
@@ -48,20 +48,33 @@ class DashboardViewModel @Inject constructor(
     private val _statistics = MutableStateFlow(CallStatistics())
     val statistics = _statistics.asStateFlow()
 
-    private val _blockedCount = MutableStateFlow(0L)
-    val blockedCount = _blockedCount.asStateFlow()
-
-    private val _spamCount = MutableStateFlow(0L)
-    val spamCount = _spamCount.asStateFlow()
-
-    private val _drivingRepliesCount = MutableStateFlow(0L)
-    val drivingRepliesCount = _drivingRepliesCount.asStateFlow()
-
     private val _drivingModeEnabled = MutableStateFlow(false)
     val drivingModeEnabled = _drivingModeEnabled.asStateFlow()
 
     private val _drivingModeAutoReplyEnabled = MutableStateFlow(false)
     val drivingModeAutoReplyEnabled = _drivingModeAutoReplyEnabled.asStateFlow()
+
+    // --- Dashboard Activity Stats ---
+    private val _totalArrivals = MutableStateFlow(0)
+    val totalArrivals = _totalArrivals.asStateFlow()
+    private val _answeredCalls = MutableStateFlow(0)
+    val answeredCalls = _answeredCalls.asStateFlow()
+    private val _blocked = MutableStateFlow(0)
+    val blocked = _blocked.asStateFlow()
+    private val _autoReply = MutableStateFlow(0)
+    val autoReply = _autoReply.asStateFlow()
+
+    private val _receivedTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
+    val receivedTrends = _receivedTrends.asStateFlow()
+
+    private val _allowedTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
+    val allowedTrends = _allowedTrends.asStateFlow()
+
+    private val _blockedTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
+    val blockedTrends = _blockedTrends.asStateFlow()
+
+    private val _replyTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
+    val replyTrends = _replyTrends.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -97,34 +110,52 @@ class DashboardViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Observe blocked calls
-            getAnalyticsUseCase.getBlockedCallsCount().collect { count ->
-                _blockedCount.value = count
-            }
-        }
+            // Fetch Today's Statistics and Trends
+            val calendar = java.util.Calendar.getInstance()
+            calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+            calendar.set(java.util.Calendar.MINUTE, 0)
+            calendar.set(java.util.Calendar.SECOND, 0)
+            calendar.set(java.util.Calendar.MILLISECOND, 0)
+            val startTime = calendar.timeInMillis
 
-        viewModelScope.launch {
-            // Observe spam calls
-            getAnalyticsUseCase.getSpamCallsCount().collect { count ->
-                _spamCount.value = count
-            }
-        }
+            combine(
+                getCallHistoryUseCase.getCallsInTimeRange(startTime, Long.MAX_VALUE),
+                getAnalyticsUseCase.getDrivingModeRepliesInTimeRange(startTime, Long.MAX_VALUE)
+            ) { callLogs, drivingLogs ->
+                Pair(callLogs, drivingLogs)
+            }.collect { (callLogs, drivingLogs) ->
+                val incomingCalls = callLogs.filter { it.callType == CallType.INCOMING.ordinal }
+                
+                // Received: All calls that reached the phone (Not Blocked)
+                _totalArrivals.value = incomingCalls.count { !it.wasBlocked }
+                
+                // Allowed: Specifically the ones ANSWERED by the user
+                _answeredCalls.value = incomingCalls.count { it.duration > 0 && !it.wasBlocked }
+                
+                // Blocked: Calls rejected by the app
+                _blocked.value = callLogs.count { it.wasBlocked }
+                
+                // Auto-Reply: SMS sent
+                _autoReply.value = drivingLogs.size
 
-        viewModelScope.launch {
-            // Observe driving mode replies
-            getAnalyticsUseCase.getDrivingModeRepliesCount().collect { count ->
-                _drivingRepliesCount.value = count
-            }
-        }
+                // Trends (Hourly)
+                val hours = (0..23).map { h -> h.toString().padStart(2, '0') }
+                
+                val receivedGroup = incomingCalls.filter { !it.wasBlocked }
+                    .groupBy { java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp)) }
+                
+                val allowedGroup = incomingCalls.filter { it.duration > 0 && !it.wasBlocked }
+                    .groupBy { java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp)) }
+                
+                val blockedGroup = callLogs.filter { it.wasBlocked }
+                    .groupBy { java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp)) }
+                
+                val replyGroup = drivingLogs.groupBy { java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp)) }
 
-        viewModelScope.launch {
-            // Combine statistics
-            analyticsRepository.getCallStatistics().collect { stats ->
-                _statistics.value = stats.copy(
-                    blockedCalls = _blockedCount.value,
-                    spamCallsPrevented = _spamCount.value,
-                    drivingModeRepliesSent = _drivingRepliesCount.value
-                )
+                _receivedTrends.value = hours.map { h -> h to (receivedGroup[h]?.size ?: 0) }
+                _allowedTrends.value = hours.map { h -> h to (allowedGroup[h]?.size ?: 0) }
+                _blockedTrends.value = hours.map { h -> h to (blockedGroup[h]?.size ?: 0) }
+                _replyTrends.value = hours.map { h -> h to (replyGroup[h]?.size ?: 0) }
             }
         }
     }

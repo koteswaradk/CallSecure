@@ -62,6 +62,7 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier
+                    .widthIn(max = 500.dp)
                     .fillMaxWidth()
                     .padding(8.dp)
             ) {
@@ -100,7 +101,9 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
             // Pager indicator
             Row(
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .widthIn(max = 500.dp)
+                    .fillMaxWidth()
             ) {
                 repeat(pages.size) { i ->
                     Box(
@@ -114,7 +117,9 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(24.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .widthIn(max = 500.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 if (currentPage > 0) {

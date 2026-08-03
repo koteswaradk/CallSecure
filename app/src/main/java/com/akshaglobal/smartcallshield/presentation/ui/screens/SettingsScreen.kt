@@ -120,19 +120,25 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .background(MaterialTheme.colorScheme.surface),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
-        Text(
-            "Settings",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .widthIn(max = 600.dp) // Professional constraint for tablets
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            // Header
+            Text(
+                "Settings",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
         // --- PRIMARY FEATURE: DRIVING MODE ---
         SettingsSectionHeader("Driving Mode & Auto-Reply")
@@ -375,7 +381,7 @@ fun SettingsScreen(
                 textContentColor = MaterialTheme.colorScheme.onSurface,
                 text = {
                     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        Text("All the data processed and stored locally\n\nNot collecting any personal data from the user\n\nNot handling any kind of data manipulation of the calls\n\nOnce the app is deleted from the device complete data will be deleted", color = MaterialTheme.colorScheme.onSurface)
+                        Text("SMS and Call Log data are processed locally on the device and never uploaded to a server\n\nNot collecting any personal data from the user\n\nNot handling any kind of data manipulation of the calls\n\nOnce the app is deleted from the device complete data will be deleted", color = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 confirmButton = {
@@ -428,6 +434,7 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
     }
+}
 }
 
 
