@@ -346,7 +346,7 @@ private fun ActivityOverviewSection(viewModel: DashboardViewModel) {
     val blockedTrends by viewModel.blockedTrends.collectAsState()
     val replyTrends by viewModel.replyTrends.collectAsState()
 
-    val isCompact = LocalConfiguration.current.screenWidthDp < 360
+    val isCompact = LocalConfiguration.current.screenWidthDp < 480
 
     Column(
         modifier = Modifier

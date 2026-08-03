@@ -5,7 +5,13 @@
     <!-- Call and SMS Permissions -->
     <uses-feature
         android:name="android.hardware.telephony"
-        android:required="false" />
+        android:required="true" />
+
+    <supports-screens
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="false" />
 
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -59,7 +65,9 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.SmartCallShield"
-            android:windowSoftInputMode="adjustResize">
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            tools:ignore="LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -70,7 +78,9 @@
         <activity
             android:name=".presentation.ui.dialer.DialerActivity"
             android:exported="true"
-            android:theme="@style/Theme.SmartCallShield">
+            android:theme="@style/Theme.SmartCallShield"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.DIAL" />
                 <action android:name="android.intent.action.CALL" />

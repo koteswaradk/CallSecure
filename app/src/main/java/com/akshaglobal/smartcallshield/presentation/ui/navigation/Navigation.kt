@@ -79,27 +79,15 @@ fun MainNavigationContent(
     dashboardContent: @Composable () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val useNavRail = windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
-
-    if (useNavRail) {
-        AdaptiveNavRailContent(
-            navController = navController,
-            isAppEnabled = isAppEnabled,
-            selectedTab = selectedTab,
-            onTabSelected = { selectedTab = it },
-            windowSizeClass = windowSizeClass,
-            dashboardContent = dashboardContent
-        )
-    } else {
-        AdaptiveBottomBarContent(
-            navController = navController,
-            isAppEnabled = isAppEnabled,
-            selectedTab = selectedTab,
-            onTabSelected = { selectedTab = it },
-            windowSizeClass = windowSizeClass,
-            dashboardContent = dashboardContent
-        )
-    }
+    
+    AdaptiveBottomBarContent(
+        navController = navController,
+        isAppEnabled = isAppEnabled,
+        selectedTab = selectedTab,
+        onTabSelected = { selectedTab = it },
+        windowSizeClass = windowSizeClass,
+        dashboardContent = dashboardContent
+    )
 }
 
 @Composable
@@ -166,85 +154,6 @@ private fun AdaptiveBottomBarContent(
     }
 }
 
-@Composable
-private fun AdaptiveNavRailContent(
-    navController: NavHostController,
-    isAppEnabled: Boolean,
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    windowSizeClass: WindowSizeClass,
-    dashboardContent: @Composable () -> Unit
-) {
-    Row(modifier = Modifier.fillMaxSize()) {
-        NavigationRail(
-            containerColor = MaterialTheme.colorScheme.background,
-            header = {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = null,
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        ) {
-            val items = listOf(
-                Screen.Dashboard,
-                Screen.Contacts,
-                Screen.Analytics,
-                Screen.Settings
-            )
-
-            Column(
-                modifier = Modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.Center
-            ) {
-                items.forEachIndexed { index, screen ->
-                    val icon = when (screen) {
-                        Screen.Dashboard -> Icons.Default.Home
-                        Screen.Contacts -> Icons.Default.Phone
-                        Screen.Analytics -> Icons.Default.Info
-                        Screen.Settings -> Icons.Default.Settings
-                        else -> Icons.Default.Settings
-                    }
-
-                    NavigationRailItem(
-                        icon = { Icon(icon, contentDescription = screen.label) },
-                        label = { Text(screen.label) },
-                        selected = selectedTab == index,
-                        onClick = {
-                            onTabSelected(index)
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
-                        },
-                        colors = NavigationRailItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primary,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        ),
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-                }
-            }
-        }
-
-        Column(modifier = Modifier.fillMaxSize()) {
-            BannerAdView(isCollapsible = false)
-            Scaffold { paddingValues ->
-                NavHostContent(
-                    navController = navController,
-                    paddingValues = paddingValues,
-                    isAppEnabled = isAppEnabled,
-                    windowSizeClass = windowSizeClass,
-                    dashboardContent = dashboardContent
-                )
-            }
-        }
-    }
-}
 
 @Composable
 private fun NavHostContent(
