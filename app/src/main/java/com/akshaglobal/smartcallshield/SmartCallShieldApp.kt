@@ -21,11 +21,19 @@ class SmartCallShieldApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Initialize Mobile Ads SDK
-        MobileAds.initialize(this) {}
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            // Defer Mobile Ads initialization
+            MobileAds.initialize(this@SmartCallShieldApp) {}
 
-        // Initialize app-level components
-        runSpamDetectionOnCallHistory()
+            // Only run heavy initialization if not already done
+            val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            val initialScanDone = prefs.getBoolean("initial_spam_scan_done", false)
+            if (!initialScanDone) {
+                runSpamDetectionOnCallHistory()
+                prefs.edit().putBoolean("initial_spam_scan_done", true).apply()
+            }
+        }
     }
 
     private fun runSpamDetectionOnCallHistory() {

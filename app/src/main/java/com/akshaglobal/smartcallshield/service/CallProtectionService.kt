@@ -45,6 +45,8 @@ class CallProtectionService : Service() {
         // Sync check to avoid starting foreground if app is disabled
         val appEnabled = runBlocking { preferencesManager.isAppEnabled.first() }
         if (!appEnabled) {
+            notificationManager.cancel(NOTIFICATION_ID)
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }

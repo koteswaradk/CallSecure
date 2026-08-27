@@ -157,27 +157,7 @@ class MainActivity : ComponentActivity() {
             CoroutineScope(Dispatchers.IO).launch {
                 val trainer = FirstLaunchTrainer(this@MainActivity, callLogRepository)
                 trainer.trainModelOnFirstLaunch()
-            }
-        }
-
-        // Each time app launches: read call logs and block spam/robocall/unwanted calls if enabled
-        CoroutineScope(Dispatchers.IO).launch {
-            val isAppEnabled = preferencesManager.isAppEnabled.firstOrNull() ?: true
-            if (isAppEnabled) {
-                val callLogs = callLogRepository.getAllCallLogs().firstOrNull() ?: emptyList()
-                for (log in callLogs) {
-                    try {
-                        val result = spamDetectionModel.detectSpam(log.phoneNumber)
-                        if (result.isSpam || result.category == "ROBOCALL" || result.category == "LIKELY_SPAM" || result.category == "SUSPICIOUS") {
-                            // Block the call (mark as blocked in DB)
-                            val updatedLog = log.copy(wasBlocked = true, isSpam = true, spamScore = result.confidence)
-                            callLogRepository.addCallLog(updatedLog)
-                            Log.d(TAG, "Blocked call: ${log.phoneNumber} [${result.category}]")
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Spam detection failed for ${log.phoneNumber}: ${e.message}")
-                    }
-                }
+                prefs.edit().putBoolean("model_trained", true).apply()
             }
         }
     }

@@ -13,13 +13,21 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 
 @Singleton
 class DeviceContactsProvider @Inject constructor(@ApplicationContext private val context: Context) {
+    private var cachedContacts: List<DeviceContact>? = null
+    private var lastCacheTime: Long = 0
+    private val CACHE_EXPIRY_MS = 5 * 60 * 1000 // 5 minutes cache
+
     fun fetchDeviceContacts(): List<DeviceContact> {
+        val currentTime = System.currentTimeMillis()
+        if (cachedContacts != null && (currentTime - lastCacheTime < CACHE_EXPIRY_MS)) {
+            return cachedContacts!!
+        }
+
         if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             Log.w("DeviceContactsProvider", "READ_CONTACTS permission not granted. Returning empty list.")
             return emptyList()
         }
 
-        val contacts = mutableListOf<DeviceContact>()
         val resolver: ContentResolver = context.contentResolver
         val contactsMap = mutableMapOf<String, DeviceContact>()
 
@@ -47,19 +55,30 @@ class DeviceContactsProvider @Inject constructor(@ApplicationContext private val
                     val id = c.getString(idIndex)
                     val name = c.getString(nameIndex) ?: ""
                     val numberRaw = c.getString(numberIndex) ?: ""
+                    
+                    // Simple normalization for storage
                     val normalized = numberRaw.replace(Regex("[^+0-9]"), "")
 
-                    // Only add if not already present (prevents duplicates for contacts with multiple phone numbers)
-                    if (!contactsMap.containsKey(id) && name.isNotEmpty() && normalized.isNotEmpty()) {
-                        contactsMap[id] = DeviceContact(id = id, displayName = name, phoneNumber = normalized)
+                    if (name.isNotEmpty() && normalized.isNotEmpty()) {
+                        // Using normalized number as key to truly deduplicate entries for the same person
+                        contactsMap[normalized] = DeviceContact(id = id, displayName = name, phoneNumber = normalized)
                     }
                 }
             }
-        } catch (e: SecurityException) {
-            Log.e("DeviceContactsProvider", "Missing READ_CONTACTS permission", e)
-            // Optionally notify the user or return an empty list
+            
+            cachedContacts = contactsMap.values.toList()
+            lastCacheTime = currentTime
+            
+        } catch (e: Exception) {
+            Log.e("DeviceContactsProvider", "Error fetching contacts", e)
+            return cachedContacts ?: emptyList()
         }
 
-        return contactsMap.values.toList()
+        return cachedContacts!!
+    }
+
+    fun invalidateCache() {
+        cachedContacts = null
+        lastCacheTime = 0
     }
 }
