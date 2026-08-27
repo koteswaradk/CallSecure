@@ -50,10 +50,8 @@ class CallProtectionService : Service() {
         }
 
         val initialMode = runBlocking { preferencesManager.currentMode.first() }
-        val drivingEnabled = runBlocking { preferencesManager.drivingModeEnabled.first() }
-        val autoReplyEnabled = runBlocking { preferencesManager.drivingModeAutoReplyEnabled.first() }
 
-        val initialNotification = createNotification(initialMode, drivingEnabled, autoReplyEnabled)
+        val initialNotification = createNotification(initialMode)
         try {
             startForeground(NOTIFICATION_ID, initialNotification)
         } catch (e: Exception) {
@@ -69,26 +67,25 @@ class CallProtectionService : Service() {
         scope.launch {
             combine(
                 preferencesManager.isAppEnabled,
-                preferencesManager.currentMode,
-                preferencesManager.drivingModeEnabled,
-                preferencesManager.drivingModeAutoReplyEnabled
-            ) { appEnabled, mode, drivingEnabled, autoReplyEnabled ->
-                StateConfig(appEnabled, mode, drivingEnabled, autoReplyEnabled)
+                preferencesManager.currentMode
+            ) { appEnabled, mode ->
+                StateConfig(appEnabled, mode)
             }.collect { config ->
                 if (!config.appEnabled) {
-                    Log.d(TAG, "App disabled, stopping CallProtectionService")
+                    Log.d(TAG, "App disabled, clearing notifications and stopping service")
+                    notificationManager.cancel(NOTIFICATION_ID)
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 } else {
                     Log.d(TAG, "Updating notification for mode: ${config.mode}")
-                    val updatedNotification = createNotification(config.mode, config.drivingEnabled, config.autoReplyEnabled)
+                    val updatedNotification = createNotification(config.mode)
                     notificationManager.notify(NOTIFICATION_ID, updatedNotification)
                 }
             }
         }
     }
 
-    private fun createNotification(mode: String, drivingEnabled: Boolean, autoReplyEnabled: Boolean): Notification {
+    private fun createNotification(mode: String): Notification {
         val contentIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
@@ -110,16 +107,9 @@ class CallProtectionService : Service() {
         )
 
         val modeName = mode.lowercase().replaceFirstChar { it.uppercase() }
-        val title = "DriveShield: $modeName Mode"
+        val title = "CallSecure: $modeName Mode"
         
         val description = when (mode.uppercase()) {
-            "DRIVING" -> {
-                if (drivingEnabled && autoReplyEnabled) {
-                    getString(R.string.notif_driving_mode_desc)
-                } else {
-                    getString(R.string.notif_driving_mode_no_reply_desc)
-                }
-            }
             "FAMILY" -> getString(R.string.mode_family_desc)
             "EMERGENCY" -> getString(R.string.mode_emergency_desc)
             else -> getString(R.string.notif_call_protection_desc)
@@ -145,9 +135,7 @@ class CallProtectionService : Service() {
 
     private data class StateConfig(
         val appEnabled: Boolean,
-        val mode: String,
-        val drivingEnabled: Boolean,
-        val autoReplyEnabled: Boolean
+        val mode: String
     )
 
     private fun createNotificationChannel() {
@@ -156,7 +144,7 @@ class CallProtectionService : Service() {
             "Call Protection",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Shows that SmartCallShield is active in the background"
+            description = "Shows that CallSecure is active in the background"
             setShowBadge(false)
         }
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager

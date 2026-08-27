@@ -8,7 +8,6 @@ import androidx.room.Query
 import androidx.room.Update
 import com.akshaglobal.smartcallshield.data.model.CallLogEntity
 import com.akshaglobal.smartcallshield.data.model.ContactEntity
-import com.akshaglobal.smartcallshield.data.model.DrivingModeLogEntity
 import com.akshaglobal.smartcallshield.data.model.SpamReportEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -97,22 +96,4 @@ interface SpamReportDao {
 
     @Query("DELETE FROM spam_reports WHERE lastReportedAt < :olderThan")
     suspend fun deleteOldReports(olderThan: Long)
-}
-
-@Dao
-interface DrivingModeLogDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertDrivingModeLog(log: DrivingModeLogEntity)
-
-    @Query("SELECT * FROM driving_mode_logs ORDER BY timestamp DESC LIMIT :limit")
-    fun getRecentDrivingModeLogs(limit: Int = 50): Flow<List<DrivingModeLogEntity>>
-
-    @Query("SELECT COUNT(*) FROM driving_mode_logs WHERE status = 'SENT'")
-    fun getSuccessfulAutoRepliesCount(): Flow<Long>
-
-    @Query("SELECT * FROM driving_mode_logs WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp DESC")
-    fun getDrivingModeLogsBetween(startTime: Long, endTime: Long): Flow<List<DrivingModeLogEntity>>
-
-    @Query("DELETE FROM driving_mode_logs WHERE timestamp < :beforeTimestamp")
-    suspend fun deleteOldDrivingModeLogs(beforeTimestamp: Long)
 }

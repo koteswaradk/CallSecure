@@ -58,7 +58,6 @@ fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
     val allContacts by viewModel.allContacts.collectAsState()
     // Filter contacts by category for display
     val familyContacts = allContacts.filter { it.category.equals("FAMILY", ignoreCase = true) }
-    val drivingContacts = allContacts.filter { it.category.equals("DRIVING", ignoreCase = true) }
     val emergencyContacts = allContacts.filter { it.category.equals("EMERGENCY", ignoreCase = true) }
 
     Column(
@@ -97,11 +96,6 @@ fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
             Tab(
                 selected = selectedTab == 2,
                 onClick = { selectedTab = 2 },
-                text = { Text("Driving (${drivingContacts.size})") }
-            )
-            Tab(
-                selected = selectedTab == 3,
-                onClick = { selectedTab = 3 },
                 text = { Text("Emergency (${emergencyContacts.size})") }
             )
         }
@@ -114,10 +108,7 @@ fun ContactsScreen(viewModel: ContactsViewModel = hiltViewModel()) {
             1 -> ContactsList(familyContacts) { contact ->
                 viewModel.deleteContact(contact)
             }
-            2 -> ContactsList(drivingContacts) { contact ->
-                viewModel.deleteContact(contact)
-            }
-            3 -> ContactsList(emergencyContacts) { contact ->
+            2 -> ContactsList(emergencyContacts) { contact ->
                 viewModel.deleteContact(contact)
             }
         }
@@ -242,7 +233,7 @@ private fun AddContactDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf("FAMILY", "DRIVING", "EMERGENCY").forEach { cat ->
+                    listOf("FAMILY", "EMERGENCY").forEach { cat ->
                         Button(
                             onClick = { category = cat },
                             colors = ButtonDefaults.buttonColors(

@@ -68,7 +68,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun DriveShieldTheme(
+fun CallSecureTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     // Set to false by default to maintain brand identity

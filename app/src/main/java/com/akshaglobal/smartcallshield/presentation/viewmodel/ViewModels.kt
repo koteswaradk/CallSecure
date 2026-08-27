@@ -48,12 +48,6 @@ class DashboardViewModel @Inject constructor(
     private val _statistics = MutableStateFlow(CallStatistics())
     val statistics = _statistics.asStateFlow()
 
-    private val _drivingModeEnabled = MutableStateFlow(false)
-    val drivingModeEnabled = _drivingModeEnabled.asStateFlow()
-
-    private val _drivingModeAutoReplyEnabled = MutableStateFlow(false)
-    val drivingModeAutoReplyEnabled = _drivingModeAutoReplyEnabled.asStateFlow()
-
     // --- Dashboard Activity Stats ---
     private val _totalArrivals = MutableStateFlow(0)
     val totalArrivals = _totalArrivals.asStateFlow()
@@ -61,8 +55,6 @@ class DashboardViewModel @Inject constructor(
     val answeredCalls = _answeredCalls.asStateFlow()
     private val _blocked = MutableStateFlow(0)
     val blocked = _blocked.asStateFlow()
-    private val _autoReply = MutableStateFlow(0)
-    val autoReply = _autoReply.asStateFlow()
 
     private val _receivedTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
     val receivedTrends = _receivedTrends.asStateFlow()
@@ -73,9 +65,6 @@ class DashboardViewModel @Inject constructor(
     private val _blockedTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
     val blockedTrends = _blockedTrends.asStateFlow()
 
-    private val _replyTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
-    val replyTrends = _replyTrends.asStateFlow()
-
     init {
         viewModelScope.launch {
             // Observe mode changes
@@ -85,13 +74,6 @@ class DashboardViewModel @Inject constructor(
                 } catch (e: Exception) {
                     CallMode.NORMAL
                 }
-            }
-        }
-
-        viewModelScope.launch {
-            // Observe driving mode auto-reply enabled status
-            preferencesManager.drivingModeAutoReplyEnabled.collect { enabled ->
-                _drivingModeAutoReplyEnabled.value = enabled
             }
         }
 
@@ -120,10 +102,10 @@ class DashboardViewModel @Inject constructor(
 
             combine(
                 getCallHistoryUseCase.getCallsInTimeRange(startTime, Long.MAX_VALUE),
-                getAnalyticsUseCase.getDrivingModeRepliesInTimeRange(startTime, Long.MAX_VALUE)
-            ) { callLogs, drivingLogs ->
-                Pair(callLogs, drivingLogs)
-            }.collect { (callLogs, drivingLogs) ->
+                getAnalyticsUseCase.getBlockedCallsCount() // Placeholder to keep combine signature or use single flow
+            ) { callLogs, _ ->
+                callLogs
+            }.collect { callLogs ->
                 val incomingCalls = callLogs.filter { it.callType == CallType.INCOMING.ordinal }
                 
                 // Received: All calls that reached the phone (Not Blocked)
@@ -134,9 +116,6 @@ class DashboardViewModel @Inject constructor(
                 
                 // Blocked: Calls rejected by the app
                 _blocked.value = callLogs.count { it.wasBlocked }
-                
-                // Auto-Reply: SMS sent
-                _autoReply.value = drivingLogs.size
 
                 // Trends (Hourly)
                 val hours = (0..23).map { h -> h.toString().padStart(2, '0') }
@@ -149,13 +128,10 @@ class DashboardViewModel @Inject constructor(
                 
                 val blockedGroup = callLogs.filter { it.wasBlocked }
                     .groupBy { java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp)) }
-                
-                val replyGroup = drivingLogs.groupBy { java.text.SimpleDateFormat("HH").format(java.util.Date(it.timestamp)) }
 
                 _receivedTrends.value = hours.map { h -> h to (receivedGroup[h]?.size ?: 0) }
                 _allowedTrends.value = hours.map { h -> h to (allowedGroup[h]?.size ?: 0) }
                 _blockedTrends.value = hours.map { h -> h to (blockedGroup[h]?.size ?: 0) }
-                _replyTrends.value = hours.map { h -> h to (replyGroup[h]?.size ?: 0) }
             }
         }
     }
@@ -164,9 +140,6 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.setCurrentMode(mode.name)
             _currentMode.value = mode
-            
-            // Sync with driving mode setting
-            preferencesManager.setDrivingModeEnabled(mode == CallMode.DRIVING)
             
             // Sync with mode repository
             val allModes = modeRepository.getAllModes().first()
@@ -180,12 +153,6 @@ class DashboardViewModel @Inject constructor(
             val newState = !_isAppEnabled.value
             preferencesManager.setAppEnabled(newState)
             _isAppEnabled.value = newState
-            
-            // Reset driving states when app is disabled
-            if (!newState) {
-                preferencesManager.setDrivingModeEnabled(false)
-                preferencesManager.setDrivingModeAutoReplyEnabled(false)
-            }
         }
     }
 }
@@ -249,30 +216,17 @@ class ContactsViewModel @Inject constructor(
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val preferencesManager: PreferencesManager,
-    private val contactRepository: ContactRepository
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
 
     private val _spamDetectionEnabled = MutableStateFlow(true)
     val spamDetectionEnabled = _spamDetectionEnabled.asStateFlow()
-
-    private val _drivingModeEnabled = MutableStateFlow(false)
-    val drivingModeEnabled = _drivingModeEnabled.asStateFlow()
-
-    private val _drivingModeAutoReply = MutableStateFlow("")
-    val drivingModeAutoReply = _drivingModeAutoReply.asStateFlow()
-
-    private val _drivingModeAutoReplyEnabled = MutableStateFlow(false)
-    val drivingModeAutoReplyEnabled = _drivingModeAutoReplyEnabled.asStateFlow()
 
     private val _spamConfidenceThreshold = MutableStateFlow(0.7f)
     val spamConfidenceThreshold = _spamConfidenceThreshold.asStateFlow()
 
     private val _autoRejectSpam = MutableStateFlow(true)
     val autoRejectSpam = _autoRejectSpam.asStateFlow()
-
-    private val _hasDrivingContacts = MutableStateFlow(false)
-    val hasDrivingContacts = _hasDrivingContacts.asStateFlow()
 
     private val _currentMode = MutableStateFlow<CallMode?>(null)
     val currentMode = _currentMode.asStateFlow()
@@ -289,36 +243,8 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            contactRepository.getContactsByCategory("DRIVING").collect { contacts ->
-                _hasDrivingContacts.value = contacts.isNotEmpty()
-            }
-        }
-        viewModelScope.launch {
-            preferencesManager.drivingModeEnabled.collect { enabled ->
-                _drivingModeEnabled.value = enabled
-            }
-        }
-        viewModelScope.launch {
             preferencesManager.spamDetectionEnabled.collect {
                 _spamDetectionEnabled.value = it
-            }
-        }
-
-       /* viewModelScope.launch {
-            preferencesManager.drivingModeEnabled.collect {
-                _drivingModeEnabled.value = it
-            }
-        }*/
-
-        viewModelScope.launch {
-            preferencesManager.drivingModeAutoReply.collect {
-                _drivingModeAutoReply.value = it
-            }
-        }
-
-        viewModelScope.launch {
-            preferencesManager.drivingModeAutoReplyEnabled.collect {
-                _drivingModeAutoReplyEnabled.value = it
             }
         }
 
@@ -342,33 +268,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setDrivingModeEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            preferencesManager.setDrivingModeEnabled(enabled)
-            _drivingModeEnabled.value = enabled
-            
-            // Sync with dashboard mode selection
-            if (enabled) {
-                preferencesManager.setCurrentMode(CallMode.DRIVING.name)
-            } else {
-                preferencesManager.setCurrentMode(CallMode.NORMAL.name)
-            }
-        }
-    }
 
-    fun setDrivingModeAutoReply(message: String) {
-        viewModelScope.launch {
-            preferencesManager.setDrivingModeAutoReply(message)
-            _drivingModeAutoReply.value = message
-        }
-    }
-
-    fun setDrivingModeAutoReplyEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            preferencesManager.setDrivingModeAutoReplyEnabled(enabled)
-            _drivingModeAutoReplyEnabled.value = enabled
-        }
-    }
 
     fun setSpamConfidenceThreshold(threshold: Float) {
         viewModelScope.launch {
@@ -398,9 +298,6 @@ class AnalyticsViewModel @Inject constructor(
     private val _spamCallsPrevented = MutableStateFlow(0L)
     val spamCallsPrevented = _spamCallsPrevented.asStateFlow()
 
-    private val _drivingRepliesSent = MutableStateFlow(0L)
-    val drivingRepliesSent = _drivingRepliesSent.asStateFlow()
-
     // --- Call Trends State ---
     private val _callTrends = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
     val callTrends = _callTrends.asStateFlow()
@@ -415,8 +312,6 @@ class AnalyticsViewModel @Inject constructor(
     val answeredCalls = _answeredCalls.asStateFlow()
     private val _blocked = MutableStateFlow(0)
     val blocked = _blocked.asStateFlow()
-    private val _autoReply = MutableStateFlow(0)
-    val autoReply = _autoReply.asStateFlow()
 
     private var trendsJob: Job? = null
 
@@ -434,11 +329,6 @@ class AnalyticsViewModel @Inject constructor(
         viewModelScope.launch {
             getAnalyticsUseCase.getSpamCallsCount().collect {
                 _spamCallsPrevented.value = it
-            }
-        }
-        viewModelScope.launch {
-            getAnalyticsUseCase.getDrivingModeRepliesCount().collect {
-                _drivingRepliesSent.value = it
             }
         }
         // Observe filter and update trends
@@ -489,12 +379,7 @@ class AnalyticsViewModel @Inject constructor(
             val callLogsFlow = if (isOverall) getCallHistoryUseCase.getAllCallLogs() 
                                else getCallHistoryUseCase.getCallsInTimeRange(startTime, now)
             
-            val drivingLogsFlow = if (isOverall) getAnalyticsUseCase.getDrivingModeRepliesInTimeRange(0, now)
-                                  else getAnalyticsUseCase.getDrivingModeRepliesInTimeRange(startTime, now)
-
-            combine(callLogsFlow, drivingLogsFlow) { callLogs, drivingLogs ->
-                Pair(callLogs, drivingLogs)
-            }.collect { (callLogs, drivingLogs) ->
+            callLogsFlow.collect { callLogs ->
                 // Update Trends Chart Data
                 val grouped = when (filter) {
                     TrendFilter.TODAY -> {
@@ -524,7 +409,6 @@ class AnalyticsViewModel @Inject constructor(
                     it.duration > 0 && !it.wasBlocked
                 }
                 _blocked.value = callLogs.count { it.wasBlocked }
-                _autoReply.value = drivingLogs.size
             }
         }
     }

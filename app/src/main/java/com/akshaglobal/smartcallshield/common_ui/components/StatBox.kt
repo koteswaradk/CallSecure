@@ -1,17 +1,13 @@
 package com.akshaglobal.smartcallshield.common_ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun StatBox(label: String, value: Int, modifier: Modifier = Modifier) {
@@ -29,8 +25,7 @@ fun StatBox(label: String, value: Int, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
-            Text(value.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold,color = MaterialTheme.colorScheme.onSurface)
+            Text(value.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
-

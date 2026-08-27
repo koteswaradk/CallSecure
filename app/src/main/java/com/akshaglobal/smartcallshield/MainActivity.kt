@@ -23,8 +23,9 @@ import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
 import dagger.hilt.android.AndroidEntryPoint
 import com.akshaglobal.smartcallshield.presentation.ui.navigation.MainNavigation
 import com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen
+import com.akshaglobal.smartcallshield.presentation.ui.screens.PermissionDisclosureScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.SplashScreen
-import com.akshaglobal.smartcallshield.presentation.ui.theme.DriveShieldTheme
+import com.akshaglobal.smartcallshield.presentation.ui.theme.CallSecureTheme
 import com.akshaglobal.smartcallshield.service.ai.FirstLaunchTrainer
 import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +46,6 @@ class MainActivity : ComponentActivity() {
     private val requiredPermissions = arrayOf(
         Manifest.permission.READ_CALL_LOG,
         Manifest.permission.READ_PHONE_STATE,
-        Manifest.permission.SEND_SMS,
         Manifest.permission.READ_CONTACTS,
         Manifest.permission.CALL_PHONE,
         Manifest.permission.INTERNET,
@@ -56,7 +56,8 @@ class MainActivity : ComponentActivity() {
         } else {
             emptyArray()
         }
-    ).plus(
+    )
+        .plus(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(Manifest.permission.ANSWER_PHONE_CALLS)
         } else {
@@ -86,15 +87,6 @@ class MainActivity : ComponentActivity() {
         // Always call initializeApp, it will handle internal checks
         initializeApp()
 
-        // Check if we need to request permissions
-        val needsRequest = requiredPermissions.any {
-            androidx.core.content.ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
-        }
-
-        if (needsRequest) {
-            permissionLauncher.launch(requiredPermissions)
-        }
-
         // Request call screening role if needed (Android 10+)
         val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
         if (!roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
@@ -104,34 +96,46 @@ class MainActivity : ComponentActivity() {
 
         val prefs = getSharedPreferences("smartcallshield_prefs", Context.MODE_PRIVATE)
         val introShown = prefs.getBoolean("intro_shown", false)
+        val disclosureShown = prefs.getBoolean("disclosure_shown", false)
 
         setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
-            DriveShieldTheme {
+            CallSecureTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    var showSplash by remember { mutableStateOf(true) }
+                    var currentScreen by remember { 
+                        mutableStateOf("splash") 
+                    }
 
-                    if (showSplash) {
-                        SplashScreen(onComplete = { showSplash = false })
-                    } else {
-                        if (!introShown) {
-                            IntroScreen(
-                                context = this,
-                                onFinish = {
-                                    prefs.edit().putBoolean("intro_shown", true).apply()
-                                    recreate()
-                                }
-                            )
-                        } else {
-                            MainNavigation(windowSizeClass = windowSizeClass)
-                        }
+                    when (currentScreen) {
+                        "splash" -> SplashScreen(onComplete = { 
+                            currentScreen = if (!introShown) "intro" else if (!disclosureShown) "disclosure" else "navigation"
+                        })
+                        "intro" -> IntroScreen(
+                            context = this,
+                            onFinish = {
+                                prefs.edit().putBoolean("intro_shown", true).apply()
+                                currentScreen = "disclosure"
+                            }
+                        )
+                        "disclosure" -> PermissionDisclosureScreen(
+                            onGetStarted = {
+                                prefs.edit().putBoolean("disclosure_shown", true).apply()
+                                requestAppPermissions()
+                                currentScreen = "navigation"
+                            }
+                        )
+                        "navigation" -> MainNavigation(windowSizeClass = windowSizeClass)
                     }
                 }
             }
         }
+    }
+
+    private fun requestAppPermissions() {
+        permissionLauncher.launch(requiredPermissions)
     }
 
     private fun initializeApp() {

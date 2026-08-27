@@ -8,13 +8,11 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.akshaglobal.smartcallshield.data.dao.CallLogDao
 import com.akshaglobal.smartcallshield.data.dao.ContactDao
-import com.akshaglobal.smartcallshield.data.dao.DrivingModeLogDao
 import com.akshaglobal.smartcallshield.data.dao.SpamReportDao
 import com.akshaglobal.smartcallshield.data.dao.ModeDao
 import com.akshaglobal.smartcallshield.data.model.AppSettingsEntity
 import com.akshaglobal.smartcallshield.data.model.CallLogEntity
 import com.akshaglobal.smartcallshield.data.model.ContactEntity
-import com.akshaglobal.smartcallshield.data.model.DrivingModeLogEntity
 import com.akshaglobal.smartcallshield.data.model.SpamReportEntity
 import com.akshaglobal.smartcallshield.data.model.ModeEntity
 import com.akshaglobal.smartcallshield.data.model.ModeContactCrossRef
@@ -23,7 +21,6 @@ import com.akshaglobal.smartcallshield.data.model.ModeContactCrossRef
 // Adds new tables for call modes feature: call_modes and mode_contact_cross_ref
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // Create call_modes table
         database.execSQL(
             """
             CREATE TABLE IF NOT EXISTS `call_modes` (
@@ -36,7 +33,6 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             """.trimIndent()
         )
 
-        // Create mode_contact_cross_ref table with foreign keys
         database.execSQL(
             """
             CREATE TABLE IF NOT EXISTS `mode_contact_cross_ref` (
@@ -49,7 +45,6 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             """.trimIndent()
         )
 
-        // Create indices for better query performance
         database.execSQL(
             "CREATE INDEX IF NOT EXISTS `index_mode_contact_cross_ref_modeId` ON `mode_contact_cross_ref` (`modeId`)"
         )
@@ -64,7 +59,6 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         ContactEntity::class,
         CallLogEntity::class,
         SpamReportEntity::class,
-        DrivingModeLogEntity::class,
         AppSettingsEntity::class,
         ModeEntity::class,
         ModeContactCrossRef::class
@@ -76,7 +70,6 @@ abstract class SmartCallShieldDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun callLogDao(): CallLogDao
     abstract fun spamReportDao(): SpamReportDao
-    abstract fun drivingModeLogDao(): DrivingModeLogDao
     abstract fun modeDao(): ModeDao
 
     companion object {

@@ -144,7 +144,7 @@ fun DashboardScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "DriveShield",
+                            "CallSecure",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -167,24 +167,14 @@ fun DashboardScreen(
                     }
                 }
 
-                // NEW: Driving Mode Primary Status Card
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    DrivingStatusCard(
-                        isAppEnabled = isAppEnabled,
-                        currentMode = currentMode,
-                        autoReplyEnabled = viewModel.drivingModeAutoReplyEnabled.collectAsState().value
-                    )
-                }
-
                 // Dialogs (Logic only, UI is triggered by state)
                 item {
                     if (showEnableDialog) {
                         AlertDialog(
                             onDismissRequest = { showEnableDialog = false },
-                            title = { Text("Enable CallShield", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+                            title = { Text("Enable CallSecure", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                             text = {
-                                Text("To enable CallShield, you must confirm. Normal mode will be set by default.", color = MaterialTheme.colorScheme.onSurface)
+                                Text("To enable CallSecure, you must confirm. Normal mode will be set by default.", color = MaterialTheme.colorScheme.onSurface)
                             },
                             containerColor = MaterialTheme.colorScheme.surface,
                             confirmButton = {
@@ -206,9 +196,9 @@ fun DashboardScreen(
                     if (showDisableDialog) {
                         AlertDialog(
                             onDismissRequest = { showDisableDialog = false },
-                            title = { Text("Disable CallShield", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+                            title = { Text("Disable CallSecure", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                             text = {
-                                Text("You are disabling the switch. Your phone will receive ALL CALLS WITHOUT ANY CALL FILTERING, including unknown calls. Press OK to disable CallShield.", color = MaterialTheme.colorScheme.onSurface)
+                                Text("You are disabling the switch. Your phone will receive ALL CALLS WITHOUT ANY CALL FILTERING, including unknown calls. Press OK to disable CallSecure.", color = MaterialTheme.colorScheme.onSurface)
                             },
                             containerColor = MaterialTheme.colorScheme.surface,
                             confirmButton = {
@@ -232,7 +222,7 @@ fun DashboardScreen(
                             },
                             title = { Text("Change Call Mode", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
                             text = {
-                                Text("CallShield will be applied to the selected mode. Press OK to switch mode.", color = MaterialTheme.colorScheme.onSurface)
+                                Text("CallSecure will be applied to the selected mode. Press OK to switch mode.", color = MaterialTheme.colorScheme.onSurface)
                             },
                             containerColor = MaterialTheme.colorScheme.surface,
                             confirmButton = {
@@ -240,7 +230,6 @@ fun DashboardScreen(
                                     viewModel.setMode(pendingMode!!)
                                     val modeName = when (pendingMode) {
                                         CallMode.FAMILY -> "FAMILY"
-                                        CallMode.DRIVING -> "DRIVING"
                                         CallMode.EMERGENCY -> "EMERGENCY"
                                         else -> "NORMAL"
                                     }
@@ -309,7 +298,6 @@ fun DashboardScreen(
                             enabled = isAppEnabled,
                             normalEnabled = isAppEnabled,
                             familyEnabled = isAppEnabled && enabledModes["FAMILY"] == true,
-                            drivingEnabled = isAppEnabled && enabledModes["DRIVING"] == true,
                             emergencyEnabled = isAppEnabled && enabledModes["EMERGENCY"] == true
                         ) { newMode ->
                             if (!isAppEnabled) return@ModeSelector
@@ -339,91 +327,42 @@ private fun ActivityOverviewSection(viewModel: DashboardViewModel) {
     val totalArrivals by viewModel.totalArrivals.collectAsState()
     val answeredCalls by viewModel.answeredCalls.collectAsState()
     val blocked by viewModel.blocked.collectAsState()
-    val autoReply by viewModel.autoReply.collectAsState()
     
     val receivedTrends by viewModel.receivedTrends.collectAsState()
     val allowedTrends by viewModel.allowedTrends.collectAsState()
     val blockedTrends by viewModel.blockedTrends.collectAsState()
-    val replyTrends by viewModel.replyTrends.collectAsState()
-
-    val isCompact = LocalConfiguration.current.screenWidthDp < 480
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 16.dp)
     ) {
-        if (isCompact) {
-            // 2x2 Grid for very narrow screens
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ActivityStatCard(
-                        label = "Received",
-                        value = totalArrivals.toString(),
-                        painter = painterResource(id = R.drawable.ic_mode_normal),
-                        iconTint = Color(0xFF3B82F6),
-                        modifier = Modifier.weight(1f)
-                    )
-                    ActivityStatCard(
-                        label = "Allowed",
-                        value = answeredCalls.toString(),
-                        painter = painterResource(id = R.drawable.ic_mode_family),
-                        iconTint = Color(0xFF10B981),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ActivityStatCard(
-                        label = "Blocked",
-                        value = blocked.toString(),
-                        painter = painterResource(id = R.drawable.ic_blocked_call),
-                        iconTint = Color(0xFFEF4444),
-                        modifier = Modifier.weight(1f)
-                    )
-                    ActivityStatCard(
-                        label = "Replies",
-                        value = autoReply.toString(),
-                        painter = painterResource(id = R.drawable.ic_driving_message),
-                        iconTint = Color(0xFFF59E0B),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        } else {
-            // standard 4-column row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                ActivityStatCard(
-                    label = "Received",
-                    value = totalArrivals.toString(),
-                    painter = painterResource(id = R.drawable.ic_mode_normal),
-                    iconTint = Color(0xFF3B82F6),
-                    modifier = Modifier.weight(1f)
-                )
-                ActivityStatCard(
-                    label = "Allowed",
-                    value = answeredCalls.toString(),
-                    painter = painterResource(id = R.drawable.ic_mode_family),
-                    iconTint = Color(0xFF10B981),
-                    modifier = Modifier.weight(1f)
-                )
-                ActivityStatCard(
-                    label = "Blocked",
-                    value = blocked.toString(),
-                    painter = painterResource(id = R.drawable.ic_blocked_call),
-                    iconTint = Color(0xFFEF4444),
-                    modifier = Modifier.weight(1f)
-                )
-                ActivityStatCard(
-                    label = "Replies",
-                    value = autoReply.toString(),
-                    painter = painterResource(id = R.drawable.ic_driving_message),
-                    iconTint = Color(0xFFF59E0B),
-                    modifier = Modifier.weight(1f)
-                )
-            }
+        // Standard 4-column row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            ActivityStatCard(
+                label = "Received",
+                value = totalArrivals.toString(),
+                painter = painterResource(id = R.drawable.ic_mode_normal),
+                iconTint = Color(0xFF3B82F6),
+                modifier = Modifier.weight(1f)
+            )
+            ActivityStatCard(
+                label = "Allowed",
+                value = answeredCalls.toString(),
+                painter = painterResource(id = R.drawable.ic_mode_family),
+                iconTint = Color(0xFF10B981),
+                modifier = Modifier.weight(1f)
+            )
+            ActivityStatCard(
+                label = "Blocked",
+                value = blocked.toString(),
+                painter = painterResource(id = R.drawable.ic_blocked_call),
+                iconTint = Color(0xFFEF4444),
+                modifier = Modifier.weight(1f)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -466,8 +405,7 @@ private fun ActivityOverviewSection(viewModel: DashboardViewModel) {
                 DashboardTrendsGraph(
                     receivedTrends = receivedTrends,
                     allowedTrends = allowedTrends,
-                    blockedTrends = blockedTrends,
-                    replyTrends = replyTrends
+                    blockedTrends = blockedTrends
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -482,7 +420,6 @@ private fun ActivityOverviewSection(viewModel: DashboardViewModel) {
                     LegendItem("Received", Color(0xFF3B82F6))
                     LegendItem("Allowed", Color(0xFF10B981))
                     LegendItem("Blocked", Color(0xFFEF4444))
-                    LegendItem("Replies", Color(0xFFF59E0B))
                 }
             }
         }
@@ -493,8 +430,7 @@ private fun ActivityOverviewSection(viewModel: DashboardViewModel) {
 private fun DashboardTrendsGraph(
     receivedTrends: List<Pair<String, Int>>,
     allowedTrends: List<Pair<String, Int>>,
-    blockedTrends: List<Pair<String, Int>>,
-    replyTrends: List<Pair<String, Int>>
+    blockedTrends: List<Pair<String, Int>>
 ) {
     val surfaceColor = Color.Transparent.toArgb()
     val onSurfaceColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
@@ -502,8 +438,7 @@ private fun DashboardTrendsGraph(
     val colors = listOf(
         Color(0xFF3B82F6), // Received
         Color(0xFF10B981), // Allowed
-        Color(0xFFEF4444), // Blocked
-        Color(0xFFF59E0B)  // Replies
+        Color(0xFFEF4444)  // Blocked
     )
 
     AndroidView(
@@ -535,8 +470,8 @@ private fun DashboardTrendsGraph(
         update = { chart: LineChart ->
             val dataSets = mutableListOf<LineDataSet>()
             
-            val allTrends = listOf(receivedTrends, allowedTrends, blockedTrends, replyTrends)
-            val labels = listOf("Received", "Allowed", "Blocked", "Replies")
+            val allTrends = listOf(receivedTrends, allowedTrends, blockedTrends)
+            val labels = listOf("Received", "Allowed", "Blocked")
             
             allTrends.forEachIndexed { index, trends ->
                 val entries = trends.mapIndexed { idx, pair ->
@@ -577,75 +512,12 @@ private fun LegendItem(label: String, color: Color, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun DrivingStatusCard(
-    isAppEnabled: Boolean,
-    currentMode: CallMode?,
-    autoReplyEnabled: Boolean
-) {
-    val isDrivingModeActive = isAppEnabled && currentMode == CallMode.DRIVING
-    val statusText = if (!isAppEnabled) "App Disabled"
-    else if (isDrivingModeActive && autoReplyEnabled) "Auto-Reply Active"
-    else if (isDrivingModeActive) "Driving Mode ON (Reply OFF)"
-    else "Driving Mode Ready"
-    
-    val containerColor = if (isDrivingModeActive && autoReplyEnabled) 
-        com.akshaglobal.smartcallshield.presentation.ui.theme.Warning.copy(alpha = 0.15f)
-    else MaterialTheme.colorScheme.surfaceVariant
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = BorderStroke(1.dp, if (isDrivingModeActive) com.akshaglobal.smartcallshield.presentation.ui.theme.Warning else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        if (isDrivingModeActive) com.akshaglobal.smartcallshield.presentation.ui.theme.Warning.copy(alpha = 0.2f)
-                        else MaterialTheme.colorScheme.surface,
-                        androidx.compose.foundation.shape.CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_mode_driving),
-                    contentDescription = null,
-                    tint = if (isDrivingModeActive) com.akshaglobal.smartcallshield.presentation.ui.theme.Warning else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(
-                    text = statusText,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isDrivingModeActive) com.akshaglobal.smartcallshield.presentation.ui.theme.Warning else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (isDrivingModeActive && autoReplyEnabled) "SMS will be sent to allowed contacts"
-                           else if (isDrivingModeActive) "Auto-Reply is disabled in settings"
-                           else "Switch to Driving Mode to enable auto-replies",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun ModeSelector(
     currentMode: CallMode,
     windowSizeClass: WindowSizeClass,
     enabled: Boolean,
     normalEnabled: Boolean = false,
     familyEnabled: Boolean = false,
-    drivingEnabled: Boolean = false,
     emergencyEnabled: Boolean = false,
     onModeSelected: (CallMode) -> Unit
 ) {
@@ -675,14 +547,6 @@ private fun ModeSelector(
                 onClick = { onModeSelected(CallMode.FAMILY) }
             )
             ModeButton(
-                label = "Driving",
-                iconRes = R.drawable.ic_mode_driving,
-                isSelected = currentMode == CallMode.DRIVING,
-                enabled = enabled && drivingEnabled,
-                selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.Warning,
-                onClick = { onModeSelected(CallMode.DRIVING) }
-            )
-            ModeButton(
                 label = "Emergency",
                 iconRes = R.drawable.ic_mode_emergency,
                 isSelected = currentMode == CallMode.EMERGENCY,
@@ -692,46 +556,39 @@ private fun ModeSelector(
             )
         }
     } else {
-        // Grid for wider screens
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                ModeButton(
-                    label = "Normal",
-                    iconRes = R.drawable.ic_mode_normal,
-                    isSelected = currentMode == CallMode.NORMAL,
-                    enabled = enabled && normalEnabled,
-                    selectedColor = MaterialTheme.colorScheme.primary,
-                    onClick = { onModeSelected(CallMode.NORMAL) }
-                )
-                Spacer(Modifier.width(16.dp))
-                ModeButton(
-                    label = "Family",
-                    iconRes = R.drawable.ic_mode_family,
-                    isSelected = currentMode == CallMode.FAMILY,
-                    enabled = enabled && familyEnabled,
-                    selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.PranixGreen,
-                    onClick = { onModeSelected(CallMode.FAMILY) }
-                )
-            }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                ModeButton(
-                    label = "Driving",
-                    iconRes = R.drawable.ic_mode_driving,
-                    isSelected = currentMode == CallMode.DRIVING,
-                    enabled = enabled && drivingEnabled,
-                    selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.Warning,
-                    onClick = { onModeSelected(CallMode.DRIVING) }
-                )
-                Spacer(Modifier.width(16.dp))
-                ModeButton(
-                    label = "Emergency",
-                    iconRes = R.drawable.ic_mode_emergency,
-                    isSelected = currentMode == CallMode.EMERGENCY,
-                    enabled = enabled && emergencyEnabled,
-                    selectedColor = MaterialTheme.colorScheme.error,
-                    onClick = { onModeSelected(CallMode.EMERGENCY) }
-                )
-            }
+        // Single row for wider screens as well, since there are only 3 modes now
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            ModeButton(
+                label = "Normal",
+                iconRes = R.drawable.ic_mode_normal,
+                isSelected = currentMode == CallMode.NORMAL,
+                enabled = enabled && normalEnabled,
+                selectedColor = MaterialTheme.colorScheme.primary,
+                onClick = { onModeSelected(CallMode.NORMAL) }
+            )
+            Spacer(Modifier.width(16.dp))
+            ModeButton(
+                label = "Family",
+                iconRes = R.drawable.ic_mode_family,
+                isSelected = currentMode == CallMode.FAMILY,
+                enabled = enabled && familyEnabled,
+                selectedColor = com.akshaglobal.smartcallshield.presentation.ui.theme.PranixGreen,
+                onClick = { onModeSelected(CallMode.FAMILY) }
+            )
+            Spacer(Modifier.width(16.dp))
+            ModeButton(
+                label = "Emergency",
+                iconRes = R.drawable.ic_mode_emergency,
+                isSelected = currentMode == CallMode.EMERGENCY,
+                enabled = enabled && emergencyEnabled,
+                selectedColor = MaterialTheme.colorScheme.error,
+                onClick = { onModeSelected(CallMode.EMERGENCY) }
+            )
         }
     }
 }

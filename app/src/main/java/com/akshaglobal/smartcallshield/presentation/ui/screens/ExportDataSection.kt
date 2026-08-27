@@ -70,13 +70,13 @@ fun ExportDataSection() {
             onExport = { method: String ->
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val fileName = "SmartCallShield.pdf"
+                        val fileName = "CallSecure.pdf"
                         val documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-                        val smartCallShieldDir = File(documentsDir, "SmartCallShield")
-                        if (!smartCallShieldDir.exists()) {
-                            smartCallShieldDir.mkdirs()
+                        val callSecureDir = File(documentsDir, "CallSecure")
+                        if (!callSecureDir.exists()) {
+                            callSecureDir.mkdirs()
                         }
-                        val file = File(smartCallShieldDir, fileName)
+                        val file = File(callSecureDir, fileName)
                         val pdfDocument = PdfDocument()
                         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
                         val page = pdfDocument.startPage(pageInfo)

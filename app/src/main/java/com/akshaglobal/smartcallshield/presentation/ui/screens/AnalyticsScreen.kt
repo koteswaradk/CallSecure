@@ -61,7 +61,6 @@ fun AnalyticsScreen(
 
     val blockedCalls by viewModel.blockedCalls.collectAsState()
     val spamCallsPrevented by viewModel.spamCallsPrevented.collectAsState()
-    val drivingRepliesSent by viewModel.drivingRepliesSent.collectAsState()
 
     // Observe spam report count
     val spamReportsCount by spamReportViewModel.spamReportsCount.collectAsState()
@@ -117,7 +116,6 @@ fun AnalyticsScreen(
                     0 -> OverviewTab(
                         blockedCalls,
                         spamCallsPrevented,
-                        drivingRepliesSent,
                         spamReportsCount = spamReportsCount
                     )
                     1 -> TrendsTab(viewModel, windowSizeClass)
@@ -131,7 +129,6 @@ fun AnalyticsScreen(
 private fun OverviewTab(
     blockedCalls: Long,
     spamCallsPrevented: Long,
-    drivingRepliesSent: Long,
     spamReportsCount: Long
 ) {
     Text(
@@ -157,16 +154,6 @@ private fun OverviewTab(
         unit = "calls",
         backgroundColor = MaterialTheme.colorScheme.primaryContainer,
         valueColor = MaterialTheme.colorScheme.onPrimaryContainer
-    )
-
-    Spacer(modifier = Modifier.height(12.dp))
-
-    AnalyticsMetricCard(
-        title = "Driving Mode Auto-Replies",
-        value = drivingRepliesSent.toString(),
-        unit = "replies",
-        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
-        valueColor = MaterialTheme.colorScheme.onSecondaryContainer
     )
 
     Spacer(modifier = Modifier.height(24.dp))
@@ -198,14 +185,6 @@ private fun OverviewTab(
     Spacer(modifier = Modifier.height(12.dp))
 
     InsightCard(
-        icon = "🚗",
-        title = "Driving Mode",
-        description = "Enable Driving Mode to send auto-replies while driving. Disable it once your drive is complete."
-    )
-
-    Spacer(modifier = Modifier.height(12.dp))
-
-    InsightCard(
         icon = "🔒",
         title = "Privacy Protected",
         description = "All data processed locally on device"
@@ -219,7 +198,6 @@ private fun TrendsTab(viewModel: AnalyticsViewModel, windowSizeClass: WindowSize
     val totalArrivals by viewModel.totalArrivals.collectAsState()
     val answeredCalls by viewModel.answeredCalls.collectAsState()
     val blocked by viewModel.blocked.collectAsState()
-    val autoReply by viewModel.autoReply.collectAsState()
 
     val filters = listOf(
         TrendFilter.TODAY to "Today",
@@ -256,14 +234,13 @@ private fun TrendsTab(viewModel: AnalyticsViewModel, windowSizeClass: WindowSize
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 StatBox("Blocked", blocked, Modifier.weight(1f))
-                StatBox("Auto-Reply", autoReply, Modifier.weight(1f))
+                Spacer(Modifier.weight(1f))
             }
         } else {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 StatBox("Total Arrival", totalArrivals, Modifier.weight(1f))
                 StatBox("Answered", answeredCalls, Modifier.weight(1f))
                 StatBox("Blocked", blocked, Modifier.weight(1f))
-                StatBox("Auto-Reply", autoReply, Modifier.weight(1f))
             }
         }
         

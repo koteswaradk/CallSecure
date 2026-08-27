@@ -10,7 +10,6 @@ import javax.inject.Inject
 
 class HandleCallUseCase @Inject constructor(
     private val detectSpamUseCase: DetectSpamUseCase,
-    private val contactRepository: ContactRepository,
     private val preferencesManager: PreferencesManager,
     private val modeRepository: ModeRepository,
     private val deviceContactsProvider: DeviceContactsProvider
@@ -25,27 +24,6 @@ class HandleCallUseCase @Inject constructor(
         val normalizedNumber = phoneNumber.replace(Regex("[^+0-9]"), "")
         println("[DEBUG] Current mode: $currentMode, Incoming: $normalizedNumber")
 
-        if (currentMode == "DRIVING") {
-            val autoReplyEnabled = preferencesManager.drivingModeAutoReplyEnabled.first()
-            val drivingContacts = contactRepository.getContactsByCategory("DRIVING").first()
-            val isDrivingContact = drivingContacts.any { c ->
-                val contactNormalized = c.phoneNumber.replace(Regex("[^+0-9]"), "")
-                contactNormalized.endsWith(normalizedNumber) || normalizedNumber.endsWith(contactNormalized)
-            }
-            
-            if (isDrivingContact) {
-                return if (autoReplyEnabled) {
-                    println("[DEBUG] Driving contact detected and Auto-Reply ON. Decision: REPLY_SMS")
-                    CallDecision.REPLY_SMS
-                } else {
-                    println("[DEBUG] Driving contact detected but Auto-Reply OFF. Decision: ALLOW")
-                    CallDecision.ALLOW
-                }
-            } else {
-                println("[DEBUG] Not a driving contact in Driving Mode. Decision: REJECT")
-                return CallDecision.REJECT
-            }
-        }
 
         if (currentMode == "FAMILY" || currentMode == "EMERGENCY") {
             val activeMode = modeRepository.getActiveMode().first()

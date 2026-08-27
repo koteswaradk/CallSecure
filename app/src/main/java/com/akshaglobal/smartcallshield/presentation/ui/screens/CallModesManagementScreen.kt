@@ -132,7 +132,6 @@ fun CallModesManagementScreen(viewModel: CallModesViewModel = hiltViewModel()) {
         val presetModes = listOf(
             Pair("Normal", "Allow all calls"),
             Pair("Family", "Only family contacts"),
-            Pair("Driving", "Family & Emergency only"),
             Pair("Emergency", "Emergency contacts only")
         )
 

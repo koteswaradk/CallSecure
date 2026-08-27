@@ -155,9 +155,8 @@ class CallModesViewModel @Inject constructor(
                 val (category, isEmergency) = when (name.uppercase()) {
                     "FAMILY" -> "FAMILY" to false
                     "EMERGENCY" -> "EMERGENCY" to true
-                    "DRIVING" -> "DRIVING" to false
                     "NORMAL" -> "NORMAL" to false
-                    else -> "NORMAL" to false // changed from 'WHITELIST' to 'NORMAL'
+                    else -> "NORMAL" to false
                 }
 
                 // Add selected contacts to the mode

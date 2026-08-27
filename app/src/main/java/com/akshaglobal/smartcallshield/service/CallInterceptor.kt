@@ -8,7 +8,6 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import com.akshaglobal.smartcallshield.data.model.CallLogEntity
@@ -18,7 +17,6 @@ import com.akshaglobal.smartcallshield.domain.usecase.CallDecision
 import dagger.hilt.android.EntryPointAccessors
 import com.akshaglobal.smartcallshield.di.CallInterceptorEntryPoint
 import com.akshaglobal.smartcallshield.util.PhoneNumberUtils
-import com.akshaglobal.smartcallshield.utils.SmsSender
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
 import com.akshaglobal.smartcallshield.data.contacts.DeviceContactsProvider
 
@@ -26,11 +24,9 @@ class CallInterceptor : BroadcastReceiver() {
 
     private lateinit var handleCallUseCase: HandleCallUseCase
     private lateinit var callLogRepository: CallLogRepository
-    private lateinit var smsSender: SmsSender
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var deviceContactsProvider: DeviceContactsProvider
     private lateinit var contactRepository: com.akshaglobal.smartcallshield.data.repository.ContactRepository
-    private lateinit var drivingModeLogRepository: com.akshaglobal.smartcallshield.data.repository.DrivingModeLogRepository
 
     private var spamDetector: TFLiteSpamDetector? = null
 
@@ -52,11 +48,9 @@ class CallInterceptor : BroadcastReceiver() {
         val entryPoint = EntryPointAccessors.fromApplication(context.applicationContext, CallInterceptorEntryPoint::class.java)
         handleCallUseCase = entryPoint.handleCallUseCase()
         callLogRepository = entryPoint.callLogRepository()
-        smsSender = entryPoint.smsSender()
         preferencesManager = entryPoint.preferencesManager()
         deviceContactsProvider = entryPoint.deviceContactsProvider()
         contactRepository = entryPoint.contactRepository()
-        drivingModeLogRepository = entryPoint.drivingModeLogRepository()
 
         if (spamDetector == null) {
             spamDetector = TFLiteSpamDetector(context)
@@ -100,8 +94,7 @@ class CallInterceptor : BroadcastReceiver() {
                     TelephonyManager.EXTRA_STATE_IDLE -> {
                         // If it was ringing and we haven't logged it yet, it's a missed call
                         if (isCurrentlyRinging && !hasLoggedCurrentCall && currentRingingDecision != null) {
-                            val isAllowedDecision = currentRingingDecision == CallDecision.ALLOW || 
-                                                  (currentRingingDecision == CallDecision.REPLY_SMS && !hasLoggedCurrentCall)
+                            val isAllowedDecision = currentRingingDecision == CallDecision.ALLOW
                             
                             if (isAllowedDecision) {
                                 logMissedCall(currentRingingNumber ?: "")
@@ -173,13 +166,11 @@ class CallInterceptor : BroadcastReceiver() {
 
                 val decision = handleCallUseCase.invoke(phoneNumber)
                 currentRingingDecision = decision
-                val e164Number = PhoneNumberUtils.normalize(phoneNumber)
 
-                // Log ONLY if blocked or auto-reply. 
+                // Log ONLY if blocked. 
                 // Allowed calls are logged in OFFHOOK when answered.
                 val isBlockedDecision = decision == CallDecision.REJECT || 
-                                      decision == CallDecision.SILENT || 
-                                      decision == CallDecision.REPLY_SMS
+                                      decision == CallDecision.SILENT
                 
                 if (isBlockedDecision) {
                     Log.d(TAG, "Logging blocked call: $phoneNumber")
@@ -204,39 +195,6 @@ class CallInterceptor : BroadcastReceiver() {
                     CallDecision.SILENT -> {
                         Log.d(TAG, "Silencing call from: $phoneNumber")
                         muteCall(context)
-                    }
-                    CallDecision.REPLY_SMS -> {
-                        Log.d(TAG, "Waiting 5 seconds before replying with SMS and rejecting call from: $phoneNumber")
-                        
-                        // Wait for 5 seconds (grace period for user to answer)
-                        delay(5000)
-                        
-                        // Ensure it's the same number AND still ringing
-                        if (currentRingingNumber == e164Number && isCurrentlyRinging) {
-                            val replyMessage = preferencesManager.drivingModeAutoReply.first()
-                            
-                            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.SEND_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                                try {
-                                    smsSender.sendSms(e164Number, replyMessage)
-                                    Log.d(TAG, "Auto-reply SMS sent to $e164Number after 5s delay")
-                                    
-                                    drivingModeLogRepository.addDrivingModeLog(
-                                        com.akshaglobal.smartcallshield.data.model.DrivingModeLogEntity(
-                                            phoneNumber = e164Number,
-                                            contactName = "", 
-                                            smsMessage = replyMessage,
-                                            timestamp = System.currentTimeMillis(),
-                                            status = "SENT"
-                                        )
-                                    )
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Failed to send auto-reply SMS", e)
-                                }
-                            }
-                            rejectCall(context)
-                        } else {
-                            Log.d(TAG, "Call answered or cleared during delay, skipping auto-reply and rejection.")
-                        }
                     }
                     CallDecision.ALLOW -> {
                         Log.d(TAG, "Allowing call from: $phoneNumber, waiting for answer to log.")

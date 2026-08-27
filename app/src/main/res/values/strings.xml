@@ -1,29 +1,26 @@
 <resources>
     <!-- App Info -->
-    <string name="app_name">DriveShield</string>
+    <string name="app_name">CallSecure</string>
     <string name="app_version">1.0.0</string>
-    <string name="app_description">Automatic SMS Auto-Reply and Smart Driving Assistant with AI Spam Protection</string>
+    <string name="app_description">Smart Call Manager with AI Spam Protection and Custom Filtering Modes</string>
 
     <!-- Dashboard Screen -->
-    <string name="dashboard_title">DriveShield</string>
+    <string name="dashboard_title">CallSecure</string>
     <string name="dashboard_call_mode">Call Mode</string>
     <string name="dashboard_statistics">Today\'s Statistics</string>
     <string name="dashboard_premium_badge">✨ Premium Features Unlocked</string>
     <string name="dashboard_blocked_calls">Blocked Calls</string>
     <string name="dashboard_spam_prevented">Spam Prevented</string>
-    <string name="dashboard_driving_replies">Driving Mode Replies</string>
 
     <!-- Mode Names -->
     <string name="mode_normal">Normal</string>
     <string name="mode_family">Family</string>
-    <string name="mode_driving">Driving</string>
     <string name="mode_emergency">Emergency</string>
     <string name="mode_sleep">Sleep</string>
 
     <!-- Mode Descriptions -->
     <string name="mode_normal_desc">Standard call handling with spam filtering</string>
     <string name="mode_family_desc">Only family contacts allowed</string>
-    <string name="mode_driving_desc">Auto-reply to calls while driving</string>
     <string name="mode_emergency_desc">Emergency contacts always ring through</string>
     <string name="mode_sleep_desc">All calls silent except emergency</string>
 
@@ -53,14 +50,6 @@
     <string name="settings_confidence_threshold">Confidence Threshold</string>
     <string name="settings_confidence_threshold_desc">Minimum AI confidence score for spam detection</string>
 
-    <string name="settings_driving_mode">Driving Mode</string>
-    <string name="settings_enable_driving_mode">Enable Driving Mode</string>
-    <string name="settings_driving_mode_desc">Automatically handle calls while driving</string>
-    <string name="settings_driving_mode_message">Auto-Reply Message</string>
-    <string name="settings_driving_mode_message_default">I\'m currently driving. I will call you back shortly.</string>
-    <string name="settings_driving_mode_gps">GPS-Based Detection</string>
-    <string name="settings_driving_mode_gps_desc">Automatically detect driving via location</string>
-
     <string name="settings_privacy">Privacy &amp; Data</string>
     <string name="settings_analytics">Analytics</string>
     <string name="settings_analytics_desc">Help improve the app with usage data</string>
@@ -68,7 +57,6 @@
     <string name="settings_cloud_sync_desc">Sync your settings across devices</string>
     <string name="settings_auto_reject_unknown">Auto-Reject Unknown</string>
     <string name="settings_auto_reject_unknown_desc">Block calls from unknown numbers</string>
-    <string name="settings_ring_count">Rings Before Auto-Reply</string>
 
     <!-- Analytics Screen -->
     <string name="analytics_title">Analytics Dashboard</string>
@@ -78,12 +66,9 @@
     <string name="analytics_this_month">This Month</string>
     <string name="analytics_total_blocked">Total Blocked Calls</string>
     <string name="analytics_spam_prevented">Spam Calls Prevented</string>
-    <string name="analytics_driving_replies">Driving Mode Auto-Replies</string>
     <string name="analytics_insights">Insights</string>
     <string name="analytics_peak_hours">Peak Hours</string>
     <string name="analytics_peak_hours_desc">Most calls occur between 2-4 PM</string>
-    <string name="analytics_driving_mode_usage">Driving Mode</string>
-    <string name="analytics_driving_mode_usage_desc">Active on average 45 minutes per day</string>
     <string name="analytics_privacy_protected">Privacy Protected</string>
     <string name="analytics_privacy_protected_desc">All data processed locally on device</string>
     <string name="analytics_graph_visualization">📈 Graph visualization</string>
@@ -113,18 +98,14 @@
     <string name="msg_contact_deleted">Contact deleted successfully</string>
     <string name="msg_invalid_phone_number">Invalid phone number</string>
     <string name="msg_permission_denied">Permission denied</string>
-    <string name="msg_requires_permission">DriveShield requires these permissions to function correctly.</string>
+    <string name="msg_requires_permission">CallSecure requires these permissions to function correctly.</string>
 
     <!-- Notifications -->
-    <string name="notif_call_protection_active">DriveShield Protection Active</string>
+    <string name="notif_call_protection_active">CallSecure Protection Active</string>
     <string name="notif_call_protection_desc">Monitoring for incoming calls and blocking spam.</string>
     <string name="notif_action_disable">Disable Protection</string>
-    <string name="notif_driving_mode_active">Driving Mode Active</string>
-    <string name="notif_driving_mode_desc">Auto reply SMS will be sent to the mode contacts saved if the call comes from them</string>
-    <string name="notif_driving_mode_no_reply_desc">Driving Mode active. Auto-reply SMS is disabled in settings.</string>
     <string name="notif_call_blocked">Call Blocked</string>
     <string name="notif_spam_detected">Spam Detected</string>
-    <string name="notif_sms_sent">Auto-Reply Sent</string>
 
     <!-- Navigation -->
     <string name="nav_dashboard">Dashboard</string>
@@ -135,16 +116,14 @@
     <!-- Permissions -->
     <string name="perm_call_log">Call Log Access</string>
     <string name="perm_phone_state">Phone State</string>
-    <string name="perm_send_sms">Send SMS</string>
     <string name="perm_read_contacts">Read Contacts</string>
     <string name="perm_location">Location Access</string>
 
     <!-- About -->
-    <string name="about_title">About DriveShield</string>
+    <string name="about_title">About CallSecure</string>
     <string name="about_version">Version %s</string>
     <string name="about_privacy_policy">Privacy Policy</string>
     <string name="about_terms">Terms of Service</string>
     <string name="about_github">GitHub</string>
-    <string name="about_email">support@driveshield.com</string>
+    <string name="about_email">support@callsecure.com</string>
 </resources>
-

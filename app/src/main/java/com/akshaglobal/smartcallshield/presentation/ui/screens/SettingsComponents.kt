@@ -63,7 +63,7 @@ fun CallModeManagementCard() {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    "Normal, Family, Driving, Emergency",
+                    "Normal, Family, Emergency",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -104,7 +104,7 @@ fun CreateModeAlertDialog(
     var selectedContacts by remember { mutableStateOf<Set<String>>(emptySet()) }
     var showModeDropdown by remember { mutableStateOf(false) }
 
-    val predefinedModes = listOf("Family", "Driving", "Emergency")
+    val predefinedModes = listOf("Family", "Emergency")
 
     // Request permission and load contacts on first load
     LaunchedEffect(Unit) {

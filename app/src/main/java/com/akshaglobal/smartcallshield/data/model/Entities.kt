@@ -48,17 +48,6 @@ data class SpamReportEntity(
     val confidence: Float = 0f // AI confidence score
 )
 
-@Entity(tableName = "driving_mode_logs")
-data class DrivingModeLogEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val phoneNumber: String,
-    val contactName: String = "",
-    val smsMessage: String,
-    val timestamp: Long = System.currentTimeMillis(),
-    val status: String = "SENT" // SENT, FAILED, PENDING
-)
-
 @Entity(tableName = "app_settings")
 data class AppSettingsEntity(
     @PrimaryKey
@@ -78,7 +67,6 @@ data class CallStatistics(
     val totalCalls: Long = 0,
     val blockedCalls: Long = 0,
     val spamCallsPrevented: Long = 0,
-    val drivingModeRepliesSent: Long = 0,
     val familyCallsReceived: Long = 0,
     val emergencyCallsReceived: Long = 0
 )
@@ -86,7 +74,6 @@ data class CallStatistics(
 enum class CallMode {
     NORMAL,
     FAMILY,
-    DRIVING,
     EMERGENCY,
     SLEEP
 }

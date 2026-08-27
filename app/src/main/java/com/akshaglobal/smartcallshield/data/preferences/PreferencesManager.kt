@@ -27,12 +27,6 @@ class PreferencesManager(private val context: Context) {
         private val SPAM_DETECTION_ENABLED = booleanPreferencesKey("spam_detection_enabled")
         private val SPAM_CONFIDENCE_THRESHOLD = floatPreferencesKey("spam_confidence_threshold")
 
-        // Driving Mode
-        private val DRIVING_MODE_ENABLED = booleanPreferencesKey("driving_mode_enabled")
-        private val DRIVING_MODE_AUTO_REPLY = stringPreferencesKey("driving_mode_auto_reply")
-        private val DRIVING_MODE_AUTO_REPLY_ENABLED = booleanPreferencesKey("driving_mode_auto_reply_enabled")
-        private val DRIVING_MODE_GPS_DETECTION = booleanPreferencesKey("driving_mode_gps_detection")
-
         // Family Mode
         private val FAMILY_MODE_ENABLED = booleanPreferencesKey("family_mode_enabled")
 
@@ -105,47 +99,6 @@ class PreferencesManager(private val context: Context) {
     suspend fun setSpamConfidenceThreshold(threshold: Float) {
         context.dataStore.edit { preferences ->
             preferences[SPAM_CONFIDENCE_THRESHOLD] = threshold
-        }
-    }
-
-    // Driving Mode
-    val drivingModeEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[DRIVING_MODE_ENABLED] ?: false
-    }
-
-    suspend fun setDrivingModeEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[DRIVING_MODE_ENABLED] = enabled
-        }
-    }
-
-    val drivingModeAutoReply: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[DRIVING_MODE_AUTO_REPLY] ?: "I'm currently driving. I will call you back shortly."
-    }
-
-    suspend fun setDrivingModeAutoReply(message: String) {
-        context.dataStore.edit { preferences ->
-            preferences[DRIVING_MODE_AUTO_REPLY] = message
-        }
-    }
-
-    val drivingModeAutoReplyEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[DRIVING_MODE_AUTO_REPLY_ENABLED] ?: false
-    }
-
-    suspend fun setDrivingModeAutoReplyEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[DRIVING_MODE_AUTO_REPLY_ENABLED] = enabled
-        }
-    }
-
-    val drivingModeGpsDetection: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[DRIVING_MODE_GPS_DETECTION] ?: false
-    }
-
-    suspend fun setDrivingModeGpsDetection(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[DRIVING_MODE_GPS_DETECTION] = enabled
         }
     }
 
