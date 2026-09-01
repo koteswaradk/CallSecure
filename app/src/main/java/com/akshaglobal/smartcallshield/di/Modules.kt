@@ -1,7 +1,7 @@
 package com.akshaglobal.smartcallshield.di
 
 import android.content.Context
-import com.akshaglobal.smartcallshield.data.database.SmartCallShieldDatabase
+import com.akshaglobal.smartcallshield.data.database.CallSecureDatabase
 import com.akshaglobal.smartcallshield.data.dao.CallLogDao
 import com.akshaglobal.smartcallshield.data.dao.ContactDao
 import com.akshaglobal.smartcallshield.data.dao.SpamReportDao
@@ -23,31 +23,31 @@ object DatabaseModule {
     @Provides
     fun provideDatabase(
         @ApplicationContext context: Context
-    ): SmartCallShieldDatabase {
-        return SmartCallShieldDatabase.getDatabase(context)
+    ): CallSecureDatabase {
+        return CallSecureDatabase.getDatabase(context)
     }
 
     @Singleton
     @Provides
-    fun provideCallLogDao(database: SmartCallShieldDatabase): CallLogDao {
+    fun provideCallLogDao(database: CallSecureDatabase): CallLogDao {
         return database.callLogDao()
     }
 
     @Singleton
     @Provides
-    fun provideContactDao(database: SmartCallShieldDatabase): ContactDao {
+    fun provideContactDao(database: CallSecureDatabase): ContactDao {
         return database.contactDao()
     }
 
     @Singleton
     @Provides
-    fun provideSpamReportDao(database: SmartCallShieldDatabase): SpamReportDao {
+    fun provideSpamReportDao(database: CallSecureDatabase): SpamReportDao {
         return database.spamReportDao()
     }
 
     @Singleton
     @Provides
-    fun provideModeDao(database: SmartCallShieldDatabase): ModeDao {
+    fun provideModeDao(database: CallSecureDatabase): ModeDao {
         return database.modeDao()
     }
 

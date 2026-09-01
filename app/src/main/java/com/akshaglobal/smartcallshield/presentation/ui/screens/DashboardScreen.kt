@@ -47,7 +47,7 @@ import com.akshaglobal.smartcallshield.data.model.CallMode
 import com.akshaglobal.smartcallshield.presentation.viewmodel.CallModesViewModel
 import com.akshaglobal.smartcallshield.presentation.viewmodel.DashboardViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.akshaglobal.smartcallshield.SmartCallShieldApp
+import com.akshaglobal.smartcallshield.CallSecureApp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -183,7 +183,7 @@ fun DashboardScreen(
                                     viewModel.setMode(CallMode.NORMAL)
                                     callModesViewModel.createOrActivateMode("NORMAL")
                                     showEnableDialog = false
-                                    SmartCallShieldApp.isCallShieldEnabled = true
+                                    CallSecureApp.isCallShieldEnabled = true
                                 }) { Text("OK") }
                             },
                             dismissButton = {

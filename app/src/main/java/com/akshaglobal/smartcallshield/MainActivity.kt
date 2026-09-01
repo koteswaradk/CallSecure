@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
             startActivity(intent)
         }
 
-        val prefs = getSharedPreferences("smartcallshield_prefs", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("callsecure_prefs", Context.MODE_PRIVATE)
         val introShown = prefs.getBoolean("intro_shown", false)
         val disclosureShown = prefs.getBoolean("disclosure_shown", false)
 

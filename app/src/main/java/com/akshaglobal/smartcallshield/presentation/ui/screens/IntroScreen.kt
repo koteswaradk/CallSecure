@@ -130,7 +130,7 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
                     Button(onClick = { currentPage++ }, modifier = Modifier.width(120.dp)) { Text("Next") }
                 } else {
                     Button(onClick = {
-                        val prefs = context.getSharedPreferences("smartcallshield_prefs", Context.MODE_PRIVATE)
+                        val prefs = context.getSharedPreferences("callsecure_prefs", Context.MODE_PRIVATE)
                         prefs.edit { putBoolean("intro_shown", true) }
                         onFinish()
                     }, modifier = Modifier.width(120.dp)) { Text("Finish") }

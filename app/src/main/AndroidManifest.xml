@@ -45,7 +45,7 @@
     </queries>
 
     <application
-        android:name=".SmartCallShieldApp"
+        android:name=".CallSecureApp"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -53,7 +53,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SmartCallShield">
+        android:theme="@style/Theme.CallSecure">
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
@@ -63,7 +63,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.SmartCallShield"
+            android:theme="@style/Theme.CallSecure"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize"
             tools:ignore="LockedOrientationActivity">
@@ -77,7 +77,7 @@
         <activity
             android:name=".presentation.ui.dialer.DialerActivity"
             android:exported="true"
-            android:theme="@style/Theme.SmartCallShield"
+            android:theme="@style/Theme.CallSecure"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity">
             <intent-filter>
