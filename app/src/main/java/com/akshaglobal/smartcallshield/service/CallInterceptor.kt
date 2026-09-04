@@ -18,17 +18,8 @@ import dagger.hilt.android.EntryPointAccessors
 import com.akshaglobal.smartcallshield.di.CallInterceptorEntryPoint
 import com.akshaglobal.smartcallshield.util.PhoneNumberUtils
 import com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
-import com.akshaglobal.smartcallshield.data.contacts.DeviceContactsProvider
 
 class CallInterceptor : BroadcastReceiver() {
-
-    private lateinit var handleCallUseCase: HandleCallUseCase
-    private lateinit var callLogRepository: CallLogRepository
-    private lateinit var preferencesManager: PreferencesManager
-    private lateinit var deviceContactsProvider: DeviceContactsProvider
-    private lateinit var contactRepository: com.akshaglobal.smartcallshield.data.repository.ContactRepository
-
-    private var spamDetector: TFLiteSpamDetector? = null
 
     companion object {
         private const val TAG = "CallInterceptor"
@@ -40,21 +31,19 @@ class CallInterceptor : BroadcastReceiver() {
         private var currentRingingDecision: CallDecision? = null
         @Volatile
         private var hasLoggedCurrentCall = false
+        
+        // Use a single CoroutineScope for the interceptor
+        private val interceptorScope = CoroutineScope(Dispatchers.Default)
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) return
 
+        // Get dependencies dynamically from Hilt
         val entryPoint = EntryPointAccessors.fromApplication(context.applicationContext, CallInterceptorEntryPoint::class.java)
-        handleCallUseCase = entryPoint.handleCallUseCase()
-        callLogRepository = entryPoint.callLogRepository()
-        preferencesManager = entryPoint.preferencesManager()
-        deviceContactsProvider = entryPoint.deviceContactsProvider()
-        contactRepository = entryPoint.contactRepository()
-
-        if (spamDetector == null) {
-            spamDetector = TFLiteSpamDetector(context)
-        }
+        val handleCallUseCase = entryPoint.handleCallUseCase()
+        val callLogRepository = entryPoint.callLogRepository()
+        val preferencesManager = entryPoint.preferencesManager()
 
         when (intent.action) {
             TelephonyManager.ACTION_PHONE_STATE_CHANGED -> {
@@ -78,7 +67,15 @@ class CallInterceptor : BroadcastReceiver() {
                             isCurrentlyRinging = true
                             currentRingingNumber = incomingNumber
                             hasLoggedCurrentCall = false
-                            handleIncomingCall(context, incomingNumber)
+                            
+                            val pendingResult = goAsync()
+                            interceptorScope.launch {
+                                try {
+                                    handleIncomingCall(context, incomingNumber, handleCallUseCase, callLogRepository, preferencesManager)
+                                } finally {
+                                    pendingResult.finish()
+                                }
+                            }
                         } else {
                             Log.d(TAG, "Already handling ringing for $incomingNumber, skipping duplicate broadcast.")
                         }
@@ -86,7 +83,15 @@ class CallInterceptor : BroadcastReceiver() {
                     TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                         // User answered the call
                         if (isCurrentlyRinging && currentRingingDecision == CallDecision.ALLOW && !hasLoggedCurrentCall) {
-                            logAnsweredCall(currentRingingNumber ?: incomingNumber)
+                            val answeredNumber = currentRingingNumber ?: incomingNumber
+                            val pendingResult = goAsync()
+                            interceptorScope.launch {
+                                try {
+                                    logAnsweredCall(answeredNumber, callLogRepository, preferencesManager)
+                                } finally {
+                                    pendingResult.finish()
+                                }
+                            }
                             hasLoggedCurrentCall = true
                         }
                         isCurrentlyRinging = false
@@ -97,7 +102,15 @@ class CallInterceptor : BroadcastReceiver() {
                             val isAllowedDecision = currentRingingDecision == CallDecision.ALLOW
                             
                             if (isAllowedDecision) {
-                                logMissedCall(currentRingingNumber ?: "")
+                                val missedNumber = currentRingingNumber ?: ""
+                                val pendingResult = goAsync()
+                                interceptorScope.launch {
+                                    try {
+                                        logMissedCall(missedNumber, callLogRepository, preferencesManager)
+                                    } finally {
+                                        pendingResult.finish()
+                                    }
+                                }
                             }
                         }
                         isCurrentlyRinging = false
@@ -110,99 +123,94 @@ class CallInterceptor : BroadcastReceiver() {
         }
     }
 
-    private fun logMissedCall(phoneNumber: String) {
+    private suspend fun logMissedCall(phoneNumber: String, callLogRepository: CallLogRepository, preferencesManager: PreferencesManager) {
         if (phoneNumber.isBlank()) return
-        val scope = CoroutineScope(Dispatchers.IO)
-        scope.launch {
-            try {
-                Log.d(TAG, "Logging missed call for: $phoneNumber")
-                callLogRepository.addCallLog(
-                    CallLogEntity(
-                        phoneNumber = phoneNumber,
-                        timestamp = System.currentTimeMillis(),
-                        callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
-                        duration = 0, // Missed
-                        isSpam = false,
-                        wasBlocked = false
-                    )
+        try {
+            if (!preferencesManager.isAppEnabled.first()) return
+
+            Log.d(TAG, "Logging missed call for: $phoneNumber")
+            callLogRepository.addCallLog(
+                CallLogEntity(
+                    phoneNumber = phoneNumber,
+                    timestamp = System.currentTimeMillis(),
+                    callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                    duration = 0, // Missed
+                    isSpam = false,
+                    wasBlocked = false
                 )
-            } catch (e: Exception) {
-                Log.e(TAG, "Error logging missed call", e)
-            }
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error logging missed call", e)
         }
     }
 
-    private fun logAnsweredCall(phoneNumber: String) {
+    private suspend fun logAnsweredCall(phoneNumber: String, callLogRepository: CallLogRepository, preferencesManager: PreferencesManager) {
         if (phoneNumber.isBlank()) return
         
-        val scope = CoroutineScope(Dispatchers.IO)
-        scope.launch {
-            try {
-                Log.d(TAG, "Logging answered call for: $phoneNumber")
+        try {
+            if (!preferencesManager.isAppEnabled.first()) return
+
+            Log.d(TAG, "Logging answered call for: $phoneNumber")
+            callLogRepository.addCallLog(
+                CallLogEntity(
+                    phoneNumber = phoneNumber,
+                    timestamp = System.currentTimeMillis(),
+                    callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
+                    duration = 1, // Set > 0 to count as answered/allowed
+                    isSpam = false,
+                    wasBlocked = false
+                )
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error logging answered call", e)
+        }
+    }
+
+    private suspend fun handleIncomingCall(context: Context, phoneNumber: String?, handleCallUseCase: HandleCallUseCase, callLogRepository: CallLogRepository, preferencesManager: PreferencesManager) {
+        if (phoneNumber.isNullOrBlank()) return
+
+        try {
+            val appEnabled = preferencesManager.isAppEnabled.first()
+            if (!appEnabled) return
+
+            val decision = handleCallUseCase.invoke(phoneNumber)
+            currentRingingDecision = decision
+
+            // Log ONLY if blocked. 
+            // Allowed calls are logged in OFFHOOK when answered.
+            val isBlockedDecision = decision == CallDecision.REJECT || 
+                                  decision == CallDecision.SILENT
+            
+            if (isBlockedDecision) {
+                Log.d(TAG, "Logging blocked call: $phoneNumber")
                 callLogRepository.addCallLog(
                     CallLogEntity(
                         phoneNumber = phoneNumber,
                         timestamp = System.currentTimeMillis(),
                         callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
-                        duration = 1, // Set > 0 to count as answered/allowed
-                        isSpam = false,
-                        wasBlocked = false
+                        duration = 0,
+                        isSpam = isBlockedDecision,
+                        wasBlocked = isBlockedDecision
                     )
                 )
-            } catch (e: Exception) {
-                Log.e(TAG, "Error logging answered call", e)
+                hasLoggedCurrentCall = true
             }
-        }
-    }
 
-    private fun handleIncomingCall(context: Context, phoneNumber: String?) {
-        if (phoneNumber.isNullOrBlank()) return
-
-        val scope = CoroutineScope(Dispatchers.Default)
-        scope.launch {
-            try {
-                val appEnabled = preferencesManager.isAppEnabled.first()
-                if (!appEnabled) return@launch
-
-                val decision = handleCallUseCase.invoke(phoneNumber)
-                currentRingingDecision = decision
-
-                // Log ONLY if blocked. 
-                // Allowed calls are logged in OFFHOOK when answered.
-                val isBlockedDecision = decision == CallDecision.REJECT || 
-                                      decision == CallDecision.SILENT
-                
-                if (isBlockedDecision) {
-                    Log.d(TAG, "Logging blocked call: $phoneNumber")
-                    callLogRepository.addCallLog(
-                        CallLogEntity(
-                            phoneNumber = phoneNumber,
-                            timestamp = System.currentTimeMillis(),
-                            callType = com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal,
-                            duration = 0,
-                            isSpam = isBlockedDecision,
-                            wasBlocked = isBlockedDecision
-                        )
-                    )
-                    hasLoggedCurrentCall = true
+            when (decision) {
+                CallDecision.REJECT -> {
+                    Log.d(TAG, "Rejecting call from: $phoneNumber")
+                    rejectCall(context)
                 }
-
-                when (decision) {
-                    CallDecision.REJECT -> {
-                        Log.d(TAG, "Rejecting call from: $phoneNumber")
-                        rejectCall(context)
-                    }
-                    CallDecision.SILENT -> {
-                        Log.d(TAG, "Silencing call from: $phoneNumber")
-                        muteCall(context)
-                    }
-                    CallDecision.ALLOW -> {
-                        Log.d(TAG, "Allowing call from: $phoneNumber, waiting for answer to log.")
-                    }
+                CallDecision.SILENT -> {
+                    Log.d(TAG, "Silencing call from: $phoneNumber")
+                    muteCall(context)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error handling incoming call", e)
+                CallDecision.ALLOW -> {
+                    Log.d(TAG, "Allowing call from: $phoneNumber, waiting for answer to log.")
+                }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling incoming call", e)
         }
     }
 
