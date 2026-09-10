@@ -293,7 +293,7 @@ fun SettingsScreen(
                     textContentColor = MaterialTheme.colorScheme.onSurface,
                     text = {
                         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            Text("Last Updated: June 30, 2026" +
+                            Text("Last Updated: Sept 15, 2026" +
                                     "\n\nWelcome to CallSecure. By downloading, installing, or using this application, you agree to these Terms & Conditions. If you do not agree with these terms, please do not use the application." +
                                     "\n\n1. Acceptance of Terms\nBy using CallSecure, you agree to comply with these Terms & Conditions and all applicable laws and regulations." +
                                     "\n\n2. Purpose of the Application\nCallSecure is designed to help users identify and manage incoming phone calls by providing features such as:\n\t•\tSpam and unwanted call detection\n\t•\tAI-assisted call screening\n\t•\tCaller identification\n\t•\tAutomatic call handling (where supported)\n\t•\tCall history insights and analytics\n\t•\tUser-customizable blocking and notification settings\nCallSecure is intended to assist users but does not guarantee that every spam or fraudulent call will be detected or blocked." +
@@ -309,8 +309,8 @@ fun SettingsScreen(
                                     "\n\n13. Account and Settings\nIf the application offers cloud Synchronization or account-based features, you are responsible for maintaining the security of your account and device." +
                                     "\n\n14. Termination\nWe reserve the right to suspend or terminate access to the application if these Terms & Conditions are violated or if misuse of the application is detected and will be prosecuted ." +
                                     "\n\n15. Changes to These Terms\nThese Terms & Conditions may be updated periodically.\nThe latest version will always be available within the application. Continued use of CallSecure after changes become effective constitutes acceptance of the updated terms." +
-                                    "\n\n16. Contact Us\nIf you have questions, feedback, or concerns regarding these Terms & Conditions, please contact us using the support option provided within the application or through our official website." +"10. Children's Privacy\n" +
-                                    "\n\n17  CallSecure is not intended for children under the age of 13 (or the minimum age required by applicable law).\n"+
+                                    "\n\n16. Contact Us\nIf you have questions, feedback, or concerns regarding these Terms & Conditions, please contact us using the support option provided within the application or through our official website."+
+                                    "\n\n17  CallSecure is not intended for children under the age of 13 (or the minimum age required by applicable law of the country app installed by the user).\n"+
                                     "\n\n18. Acceptance\nBy installing or using CallSecure, you acknowledge that you have read, understood, and agree to these Terms & Conditions.", color = MaterialTheme.colorScheme.onSurface)
                         }
                     },
