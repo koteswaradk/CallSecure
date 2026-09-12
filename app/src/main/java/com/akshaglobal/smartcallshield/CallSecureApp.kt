@@ -9,5 +9,3 @@ class CallSecureApp : Application() {
         var isCallShieldEnabled: Boolean = false
     }
 }
-
-typealias SmartCallShieldApp = CallSecureApp
