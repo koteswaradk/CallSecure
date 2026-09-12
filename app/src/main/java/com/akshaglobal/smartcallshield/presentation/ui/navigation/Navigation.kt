@@ -1,6 +1,7 @@
 package com.akshaglobal.smartcallshield.presentation.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Phone
@@ -42,6 +43,7 @@ import com.akshaglobal.smartcallshield.presentation.ui.screens.AnalyticsScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.CallModesManagementScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.ContactsScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.DashboardScreen
+import com.akshaglobal.smartcallshield.presentation.ui.screens.HistoryScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.SettingsScreen
 import com.akshaglobal.smartcallshield.presentation.ui.components.BannerAdView
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -51,6 +53,7 @@ sealed class Screen(val route: String, val label: String) {
     object Dashboard : Screen("dashboard", "Dashboard")
     object Contacts : Screen("contacts", "Contacts")
     object Analytics : Screen("analytics", "Analytics")
+    object History : Screen("history", "History")
     object Settings : Screen("settings", "Settings")
     object CallModes : Screen("callmodes", "Call Modes")
 }
@@ -110,6 +113,7 @@ private fun AdaptiveBottomBarContent(
                         Screen.Dashboard,
                         Screen.Contacts,
                         Screen.Analytics,
+                        Screen.History,
                         Screen.Settings
                     )
 
@@ -118,6 +122,7 @@ private fun AdaptiveBottomBarContent(
                             Screen.Dashboard -> Icons.Default.Home
                             Screen.Contacts -> Icons.Default.Phone
                             Screen.Analytics -> Icons.Default.Info
+                            Screen.History -> Icons.Default.Call
                             Screen.Settings -> Icons.Default.Settings
                             else -> Icons.Default.Settings
                         }
@@ -176,6 +181,9 @@ private fun NavHostContent(
         }
         composable(Screen.Analytics.route) {
             AnalyticsScreen(windowSizeClass = windowSizeClass)
+        }
+        composable(Screen.History.route) {
+            HistoryScreen()
         }
         composable(Screen.Settings.route) {
             SettingsScreen(windowSizeClass = windowSizeClass, isAppEnabled = isAppEnabled)

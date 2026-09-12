@@ -28,7 +28,6 @@ import androidx.core.content.edit
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun IntroScreen(context: Context, onFinish: () -> Unit) {
-    // Use only fallback drawable icons for intro pages
     val pages: List<Triple<String, String, Int>> = listOf(
         Triple("Smart Call Modes", "Select who can reach you. Choose between Normal, Family, and Emergency modes.", R.drawable.ic_mode_family),
         Triple("AI Spam Protection", "Secondary layer of defense. Keep unwanted robocalls away with AI detection.", R.drawable.ic_spam_block),
@@ -36,7 +35,6 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
     )
     var currentPage by remember { mutableStateOf(0) }
 
-    // Gradient background
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -73,7 +71,6 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Only fallback image
                         Image(
                             painter = painterResource(id = pages[page].third),
                             contentDescription = pages[page].first,
@@ -97,7 +94,6 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
-            // Pager indicator
             Row(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
@@ -139,5 +135,3 @@ fun IntroScreen(context: Context, onFinish: () -> Unit) {
         }
     }
 }
-
-// NOTE: To add Lottie animations in the future, place intro_*.json in res/raw and update the code to use them.

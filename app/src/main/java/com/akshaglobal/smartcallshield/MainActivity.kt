@@ -1,6 +1,7 @@
 package com.akshaglobal.smartcallshield
 
 import android.Manifest
+import android.app.ActivityManager
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
@@ -11,7 +12,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,19 +19,17 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import com.akshaglobal.smartcallshield.data.repository.CallLogRepository
-import dagger.hilt.android.AndroidEntryPoint
 import com.akshaglobal.smartcallshield.presentation.ui.navigation.MainNavigation
 import com.akshaglobal.smartcallshield.presentation.ui.screens.IntroScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.PermissionDisclosureScreen
 import com.akshaglobal.smartcallshield.presentation.ui.screens.SplashScreen
 import com.akshaglobal.smartcallshield.presentation.ui.theme.CallSecureTheme
 import com.akshaglobal.smartcallshield.service.ai.FirstLaunchTrainer
-import com.akshaglobal.smartcallshield.service.ai.SpamDetectionModel
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -39,7 +37,6 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject lateinit var callLogRepository: CallLogRepository
     @Inject lateinit var preferencesManager: com.akshaglobal.smartcallshield.data.preferences.PreferencesManager
-    @Inject lateinit var spamDetectionModel: SpamDetectionModel
 
     private var isInitialized = false
 
@@ -69,10 +66,8 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         Log.d(TAG, "Permissions result received")
-        // Initialize app regardless of whether all permissions are granted
-        // Essential logic inside initializeApp should check for specific permissions
         initializeApp()
-        
+
         val anyDenied = permissions.entries.filter { !it.value }
         if (anyDenied.isNotEmpty()) {
             Log.w(TAG, "Some permissions denied: ${anyDenied.map { it.key }}")
@@ -84,14 +79,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Always call initializeApp, it will handle internal checks
         initializeApp()
 
-        // Request call screening role if needed (Android 10+)
-        val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
-        if (!roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
-            val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-            startActivity(intent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = getSystemService(Context.ROLE_SERVICE) as? RoleManager
+            if (roleManager != null && !roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
+                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+                startActivity(intent)
+            }
         }
 
         val prefs = getSharedPreferences("callsecure_prefs", Context.MODE_PRIVATE)
@@ -144,13 +139,8 @@ class MainActivity : ComponentActivity() {
 
         Log.d(TAG, "Initializing app")
 
-        // Manage foreground services based on preferences
         manageServices()
 
-        // Register call receiver
-        registerCallReceiver()
-
-        // TensorFlow training on first launch
         val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         val modelTrained = prefs.getBoolean("model_trained", false)
         if (!modelTrained) {
@@ -164,23 +154,26 @@ class MainActivity : ComponentActivity() {
 
     private fun manageServices() {
         lifecycleScope.launch {
-            // Observe overall app enabled state
             preferencesManager.isAppEnabled.collect { appEnabled ->
-                Log.d(TAG, "Service State Update: appEnabled=$appEnabled")
-                
                 val intent = Intent(this@MainActivity, com.akshaglobal.smartcallshield.service.CallProtectionService::class.java)
                 if (appEnabled) {
-                    startForegroundService(intent)
+                    if (!isServiceRunning()) {
+                        Log.d(TAG, "Starting protection service")
+                        startForegroundService(intent)
+                    }
                 } else {
+                    Log.d(TAG, "Stopping protection service")
                     stopService(intent)
                 }
             }
         }
     }
 
-    private fun registerCallReceiver() {
-        // Call receiver is registered via AndroidManifest
-        Log.d(TAG, "Call receiver registered via manifest")
+    private fun isServiceRunning(): Boolean {
+        val manager = getSystemService(ActivityManager::class.java)
+        val services = manager?.getRunningServices(Integer.MAX_VALUE) ?: return false
+        val serviceName = com.akshaglobal.smartcallshield.service.CallProtectionService::class.java.name
+        return services.any { it.service.className == serviceName }
     }
 
     companion object {

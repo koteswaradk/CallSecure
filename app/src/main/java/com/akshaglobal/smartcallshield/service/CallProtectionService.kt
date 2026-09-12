@@ -33,6 +33,7 @@ class CallProtectionService : Service() {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var notificationManager: NotificationManager
+    private var stateMonitorStarted = false
 
     override fun onCreate() {
         super.onCreate()
@@ -43,25 +44,28 @@ class CallProtectionService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand invoked")
 
-        // Sync check to avoid starting foreground if app is disabled
-        val appEnabled = runBlocking { preferencesManager.isAppEnabled.first() }
-        if (!appEnabled) {
-            notificationManager.cancel(NOTIFICATION_ID)
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-            return START_NOT_STICKY
+        scope.launch {
+            val appEnabled = preferencesManager.isAppEnabled.first()
+            if (!appEnabled) {
+                notificationManager.cancel(NOTIFICATION_ID)
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return@launch
+            }
+
+            val initialMode = preferencesManager.currentMode.first()
+            val initialNotification = createNotification(initialMode)
+            try {
+                startForeground(NOTIFICATION_ID, initialNotification)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start foreground service", e)
+            }
+
+            if (!stateMonitorStarted) {
+                monitorStateAndModes()
+                stateMonitorStarted = true
+            }
         }
-
-        val initialMode = runBlocking { preferencesManager.currentMode.first() }
-
-        val initialNotification = createNotification(initialMode)
-        try {
-            startForeground(NOTIFICATION_ID, initialNotification)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start foreground service", e)
-        }
-
-        monitorStateAndModes()
 
         return START_STICKY
     }
@@ -160,6 +164,7 @@ class CallProtectionService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         notificationManager.cancel(NOTIFICATION_ID)
+        stateMonitorStarted = false
         scope.cancel()
         Log.d(TAG, "CallProtectionService destroyed")
     }

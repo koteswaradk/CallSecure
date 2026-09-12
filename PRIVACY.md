@@ -1,11 +1,11 @@
-# SmartCallShield Privacy Policy
+# CallSecure Privacy Policy
 
 **Effective Date:** January 2025  
 **Last Updated:** January 2025
 
 ## 📌 Overview
 
-SmartCallShield is committed to protecting your privacy. This privacy policy explains how we handle your data and respect your privacy while providing a secure, intelligent call management service.
+CallSecure is committed to protecting your privacy. This privacy policy explains how we handle your data and respect your privacy while providing a secure, intelligent call management service.
 
 **Core Principle:** Your data stays on your device.
 
@@ -15,7 +15,7 @@ SmartCallShield is committed to protecting your privacy. This privacy policy exp
 
 ### 1.1 Information Collected Automatically
 
-When you use SmartCallShield, we collect:
+When you use CallSecure, we collect:
 
 **On Your Device (Local Storage Only):**
 - Incoming/outgoing call logs (phone numbers, timestamps, duration)
@@ -226,9 +226,9 @@ Android devices may use:
 
 ## 7. Children's Privacy
 
-SmartCallShield is not intended for children under 13.
+CallSecure is not intended for children under 13.
 
-If parents/guardians use SmartCallShield on children's devices:
+If parents/guardians use CallSecure on children's devices:
 - All data remains on the device
 - No tracking of children
 - No behavioral profiling
@@ -346,7 +346,7 @@ We may update this policy when:
 
 **Privacy Questions?**
 - Email: privacy@smartcallshield.com
-- Mail: SmartCallShield Privacy, [Address]
+- Mail: CallSecure Privacy, [Address]
 - Support: https://support.smartcallshield.com
 
 **Data Protection Officer (GDPR):**
@@ -384,7 +384,7 @@ This privacy policy is governed by:
 
 ---
 
-**SmartCallShield Privacy: Your data, your control, your peace of mind.**
+**CallSecure Privacy: Your data, your control, your peace of mind.**
 
 *Last updated: January 2025*  
 *Version: 1.0*

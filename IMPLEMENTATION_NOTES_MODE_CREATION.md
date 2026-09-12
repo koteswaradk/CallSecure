@@ -1,7 +1,7 @@
 # Call Mode Management - Implementation Notes
 
 ## Overview
-This document describes the implementation of the enhanced Call Mode Management feature in SmartCallShield, which allows users to create and manage different call handling modes (Normal, Family, Driving, Emergency) with selective contact filtering.
+This document describes the implementation of the enhanced Call Mode Management feature in CallSecure, which allows users to create and manage different call handling modes (Normal, Family, Driving, Emergency) with selective contact filtering.
 
 ## What Was Implemented
 

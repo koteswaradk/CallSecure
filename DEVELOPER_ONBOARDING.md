@@ -1,4 +1,4 @@
-# SmartCallShield - Developer Onboarding Guide
+# CallSecure - Developer Onboarding Guide
 
 ## Welcome! 👋
 
@@ -404,7 +404,7 @@ A: See ContactEntity in database. Add avatar field and update contacts provider.
 A: Yes! Build is successful, 15 tests documented, fully ready to deploy.
 
 **Q: What if permissions don't work on my device?**  
-A: Grant manually in Settings → Apps → SmartCallShield → Permissions.
+A: Grant manually in Settings → Apps → CallSecure → Permissions.
 
 ---
 
@@ -500,7 +500,7 @@ After reading this guide, you should be able to:
 
 ## 🎉 Welcome Aboard!
 
-You're now ready to work with the SmartCallShield Call Mode Creation feature!
+You're now ready to work with the CallSecure Call Mode Creation feature!
 
 - ✅ You understand the architecture
 - ✅ You know where the code is
@@ -515,5 +515,5 @@ You're now ready to work with the SmartCallShield Call Mode Creation feature!
 **Time to read**: ~30 minutes  
 **Difficulty**: Beginner-friendly  
 **Last Updated**: February 28, 2026  
-**Maintained by**: SmartCallShield Team
+**Maintained by**: CallSecure Team
 

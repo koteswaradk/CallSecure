@@ -36,7 +36,7 @@ An enhanced UI for creating and managing call modes directly from the Settings s
 
 ```bash
 # Verify the build
-cd "/Users/koteswara/Documents/aOS code/SmartCallShield"
+cd "/Users/koteswara/Documents/aOS code/CallSecure"
 ./gradlew assembleDebug assembleRelease
 
 # Expected output:
@@ -47,7 +47,7 @@ cd "/Users/koteswara/Documents/aOS code/SmartCallShield"
 ### Database Compatibility
 
 **Version Requirement**: Database version must be bumped if schema changed
-- Current: Check `SmartCallShieldDatabase.kt`
+- Current: Check `CallSecureDatabase.kt`
 - If tables added/modified: Increment version number
 - Provide migration path via `addMigration()` or `fallbackToDestructiveMigration()`
 
@@ -228,7 +228,7 @@ implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.x.x")
 If this is a database schema change:
 
 ```kotlin
-// In SmartCallShieldDatabase.kt
+// In CallSecureDatabase.kt
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
         // Create new tables if added
@@ -436,7 +436,7 @@ When users report issues:
 - `SettingsScreen.kt` - Main implementation
 - `Navigation.kt` - Route configuration
 - `CallModesViewModel.kt` - Business logic
-- `SmartCallShieldDatabase.kt` - Database setup
+- `CallSecureDatabase.kt` - Database setup
 
 ### Key Classes
 - `CreateModeAlertDialog` - Dialog composable

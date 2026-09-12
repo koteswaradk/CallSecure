@@ -222,10 +222,6 @@ class CallModesViewModel @Inject constructor(
         return modeRepository.getModeWithContacts(modeId)
     }
 
-    /**
-     * Ensures all contacts with the given category are associated with the mode of that name.
-     * Use this if you have contacts in the contacts table but not associated with the mode.
-     */
     fun ensureContactsAssociatedWithMode(modeName: String) {
         viewModelScope.launch {
             val mode = _modes.value.find { it.name.equals(modeName, ignoreCase = true) }
@@ -243,9 +239,6 @@ class CallModesViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Debug helper: Print all modes and their associated contacts.
-     */
     fun printModesAndContacts() {
         viewModelScope.launch {
             for (mode in _modes.value) {
@@ -269,9 +262,6 @@ class CallModesViewModel @Inject constructor(
         refreshEnabledModes()
     }
 
-    /**
-     * Create the mode if it does not exist, and set it as active (deactivate others)
-     */
     fun createOrActivateMode(name: String) {
         viewModelScope.launch {
             // Check if mode exists

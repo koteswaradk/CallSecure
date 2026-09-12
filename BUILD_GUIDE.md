@@ -1,4 +1,4 @@
-# SmartCallShield Build & Deployment Guide
+# CallSecure Build & Deployment Guide
 
 ## Pre-Release Checklist
 
@@ -122,18 +122,18 @@ Output location: `app/build/outputs/bundle/release/app-release.aab`
 
 ### 2. Create App in Play Console
 1. Go to Play Console → Create New App
-2. Select "SmartCallShield"
+2. Select "CallSecure"
 3. Accept agreement
 4. Choose default language (English)
 
 ### 3. Fill Store Listing
-- **App Name**: SmartCallShield
+- **App Name**: CallSecure
 - **Short Description** (50 chars):
   > AI-powered spam call blocker with privacy-first design
 
 - **Full Description** (4000 chars):
   ```
-  SmartCallShield is a privacy-focused call management app that uses 
+  CallSecure is a privacy-focused call management app that uses 
   AI to detect and block spam calls while respecting your privacy.
   
   Features:
@@ -157,7 +157,7 @@ Output location: `app/build/outputs/bundle/release/app-release.aab`
 - Include captions
 
 ### 5. Add Privacy Policy
-- Link: https://github.com/akshaglobal/SmartCallShield/blob/main/PRIVACY.md
+- Link: https://github.com/akshaglobal/CallSecure/blob/main/PRIVACY.md
 - Ensure GDPR/CCPA compliant
 
 ### 6. Set Content Rating
@@ -222,7 +222,7 @@ Example:
 ## Release Notes Template
 
 ```markdown
-# SmartCallShield v1.0.0
+# CallSecure v1.0.0
 
 ## What's New
 - Initial release
@@ -330,5 +330,5 @@ If critical issues found post-launch:
 
 ---
 
-**Ready to launch SmartCallShield to the world! 🚀**
+**Ready to launch CallSecure to the world! 🚀**
 

@@ -62,10 +62,6 @@ fun AnalyticsScreen(
     val blockedCalls by viewModel.blockedCalls.collectAsState()
     val spamCallsPrevented by viewModel.spamCallsPrevented.collectAsState()
 
-    // Observe spam report count
-    val spamReportsCount by spamReportViewModel.spamReportsCount.collectAsState()
-
-    // Start observing count on composition
     LaunchedEffect(Unit) {
         spamReportViewModel.observeSpamReportsCount()
     }
@@ -115,8 +111,7 @@ fun AnalyticsScreen(
                 when (selectedTab) {
                     0 -> OverviewTab(
                         blockedCalls,
-                        spamCallsPrevented,
-                        spamReportsCount = spamReportsCount
+                        spamCallsPrevented
                     )
                     1 -> TrendsTab(viewModel, windowSizeClass)
                 }
@@ -128,8 +123,7 @@ fun AnalyticsScreen(
 @Composable
 private fun OverviewTab(
     blockedCalls: Long,
-    spamCallsPrevented: Long,
-    spamReportsCount: Long
+    spamCallsPrevented: Long
 ) {
     Text(
         "This Month",
@@ -158,16 +152,7 @@ private fun OverviewTab(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    // --- Spam Reports Count ---
-  /*  AnalyticsMetricCard(
-        title = "Spam Reports Count",
-        value = spamReportsCount.toString(),
-        unit = "reports",
-        backgroundColor = Color(0xFFFFF3E0),
-        valueColor = Color(0xFFEF6C00)
-    )*/
-
-    Spacer(modifier = Modifier.height(12.dp))
+   Spacer(modifier = Modifier.height(12.dp))
 
     Text(
         "Insights",

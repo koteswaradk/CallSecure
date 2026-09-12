@@ -1,7 +1,7 @@
-# Hilt Dependency Injection Setup - SmartCallShield
+# Hilt Dependency Injection Setup - CallSecure
 
 ## Overview
-This document outlines the Hilt dependency injection setup for the SmartCallShield Android application.
+This document outlines the Hilt dependency injection setup for the CallSecure Android application.
 
 ## What was Added
 
@@ -54,14 +54,14 @@ kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 
 ## Application Setup
 
-### SmartCallShieldApp.kt
+### CallSecureApp.kt
 The application class is annotated with `@HiltAndroidApp`:
 
 ```kotlin
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class SmartCallShieldApp : Application() {
+class CallSecureApp : Application() {
     override fun onCreate() {
         super.onCreate()
         // Initialize app-level components
@@ -86,7 +86,7 @@ The manifest declares the Hilt application:
 
 ```xml
 <application
-    android:name=".SmartCallShieldApp"
+    android:name=".CallSecureApp"
     ...
 >
 ```
@@ -99,8 +99,8 @@ The project includes DI modules for providing singleton instances:
 Provides the Room database instance:
 ```kotlin
 object DatabaseModule {
-    fun provideDatabase(context: Context): SmartCallShieldDatabase {
-        return SmartCallShieldDatabase.getDatabase(context)
+    fun provideDatabase(context: Context): CallSecureDatabase {
+        return CallSecureDatabase.getDatabase(context)
     }
 }
 ```
@@ -109,10 +109,10 @@ object DatabaseModule {
 Provides Data Access Objects for each entity:
 ```kotlin
 object DaoModule {
-    fun provideContactDao(database: SmartCallShieldDatabase) = database.contactDao()
-    fun provideCallLogDao(database: SmartCallShieldDatabase) = database.callLogDao()
-    fun provideSpamReportDao(database: SmartCallShieldDatabase) = database.spamReportDao()
-    fun provideDrivingModeLogDao(database: SmartCallShieldDatabase) = database.drivingModeLogDao()
+    fun provideContactDao(database: CallSecureDatabase) = database.contactDao()
+    fun provideCallLogDao(database: CallSecureDatabase) = database.callLogDao()
+    fun provideSpamReportDao(database: CallSecureDatabase) = database.spamReportDao()
+    fun provideDrivingModeLogDao(database: CallSecureDatabase) = database.drivingModeLogDao()
 }
 ```
 
@@ -179,7 +179,7 @@ Generated files are placed in:
 
 At runtime, when the app starts:
 
-1. Android instantiates `SmartCallShieldApp` (the @HiltAndroidApp Application)
+1. Android instantiates `CallSecureApp` (the @HiltAndroidApp Application)
 2. Hilt initializes its component
 3. When `MainActivity` (marked with @AndroidEntryPoint) is created, Hilt performs dependency injection
 4. ViewModels can request injected dependencies via constructor injection
@@ -240,7 +240,7 @@ class MyService : Service() {
 ## Files Modified
 
 - `app/build.gradle.kts` - Added Hilt plugins, KAPT configuration, and dependencies
-- `app/src/main/java/com/akshaglobal/smartcallshield/SmartCallShieldApp.kt` - Added @HiltAndroidApp
+- `app/src/main/java/com/akshaglobal/smartcallshield/CallSecureApp.kt` - Added @HiltAndroidApp
 - `app/src/main/java/com/akshaglobal/smartcallshield/MainActivity.kt` - Has @AndroidEntryPoint
 - `app/src/main/java/com/akshaglobal/smartcallshield/di/Modules.kt` - DI module definitions
 - `AndroidManifest.xml` - Already declares the Hilt application

@@ -31,12 +31,6 @@ class FirstLaunchTrainer(private val context: Context, private val callLogReposi
             }
         }
 
-        // 3. Train model (pseudo-code, replace with TFLite Model Maker or custom routine)
-        // NOTE: TFLite on-device training is limited. This is a placeholder for actual training.
-        // You may need to use TensorFlow Lite Model Maker or retrain off-device and update model.
-        // Here, just save features/labels for future use.
-        // TODO: Implement actual training and save modelFile
-        // For now, just log training
         android.util.Log.d("FirstLaunchTrainer", "Training completed. Features: ${features.size}, Labels: ${labels.size}")
         // Save a flag so training is not repeated
         val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)

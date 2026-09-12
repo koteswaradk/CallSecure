@@ -1,4 +1,4 @@
-# SmartCallShield R8/ProGuard Configuration
+# CallSecure R8/ProGuard Configuration
 
 # Preservation for debugging
 -keepattributes SourceFile,LineNumberTable,Signature,InnerClasses,EnclosingMethod,*Annotation*

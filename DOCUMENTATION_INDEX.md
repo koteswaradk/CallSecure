@@ -1,4 +1,4 @@
-# SmartCallShield Documentation Index
+# CallSecure Documentation Index
 
 ## 📑 Complete Documentation Map
 
@@ -105,7 +105,7 @@ Welcome! This document helps you find exactly what you need.
 ## 🗂️ DOCUMENT STRUCTURE
 
 ```
-📦 SmartCallShield Documentation
+📦 CallSecure Documentation
 │
 ├─ 📄 QUICK_REFERENCE_CARD.md ⭐ START HERE
 │  └─ Overview, key facts, quick links
@@ -356,7 +356,7 @@ After reading the appropriate documents, you should be able to:
 ## 📞 DOCUMENT MAINTENANCE
 
 **Last Updated**: February 28, 2026  
-**Maintained By**: SmartCallShield Development Team  
+**Maintained By**: CallSecure Development Team  
 **Version**: 1.0  
 
 ### If you find:

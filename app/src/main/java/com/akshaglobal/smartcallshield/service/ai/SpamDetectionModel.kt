@@ -1,6 +1,3 @@
-// NOTE: The TFLite model file must be named 'spam_detection_model.tflite' and placed in the app/src/main/assets/ folder.
-// This class loads and uses the model for real-time spam/robocall/unknown call detection.
-
 package com.akshaglobal.smartcallshield.service.ai
 
 import android.content.Context
@@ -10,56 +7,43 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.random.Random
 
-/**
- * TensorFlow Lite wrapper for on-device spam detection
- * Placeholder implementation - replace with actual TFLite model integration
- */
 @Singleton
 class SpamDetectionModel @Inject constructor(
     private val context: Context
 ) {
+    @Volatile
     private var interpreter: Interpreter? = null
     private val modelFileName = "spam_detection_model.tflite"
-
-    init {
-        initialize()
-    }
+    private val initLock = Any()
 
     suspend fun detectSpam(phoneNumber: String): SpamDetectionResult {
-        return try {
-            // Extract features from phone number
-            val features = extractFeatures(phoneNumber)
+       ensureInitialized()
 
-            // Run inference through TensorFlow Lite model
-            val confidence = runInference(features)
+       return try {
+           val features = extractFeatures(phoneNumber)
+           val confidence = runInference(features)
 
-            val isSpam = confidence > 0.7f
-            val category = categorizeSpam(phoneNumber, confidence)
+           val isSpam = confidence > 0.7f
+           val category = categorizeSpam(phoneNumber, confidence)
 
-            SpamDetectionResult(
-                phoneNumber = phoneNumber,
-                isSpam = isSpam,
-                confidence = confidence,
-                category = category,
-                aiModel = "TensorFlow Lite"
-            )
-        } catch (e: Exception) {
-            // Fallback: return neutral result
-            SpamDetectionResult(
-                phoneNumber = phoneNumber,
-                isSpam = false,
-                confidence = 0.5f,
-                category = "UNKNOWN"
-            )
-        }
+           SpamDetectionResult(
+               phoneNumber = phoneNumber,
+               isSpam = isSpam,
+               confidence = confidence,
+               category = category,
+               aiModel = "TensorFlow Lite"
+           )
+       } catch (_: Exception) {
+           SpamDetectionResult(
+               phoneNumber = phoneNumber,
+               isSpam = false,
+               confidence = 0.5f,
+               category = "UNKNOWN"
+           )
+       }
     }
 
-    /**
-     * Extract features from phone number for ML model
-     * Features: international format, digit patterns, frequency analysis
-     */
     private fun extractFeatures(phoneNumber: String): FloatArray {
         return FloatArray(10) { index ->
             when (index) {
@@ -78,14 +62,8 @@ class SpamDetectionModel @Inject constructor(
         }
     }
 
-    /**
-     * Run inference using TensorFlow Lite model
-     * Placeholder: returns random confidence score
-     * In production: actual TFLite interpreter call
-     */
     private suspend fun runInference(features: FloatArray): Float {
-        // Use TFLite interpreter if available
-        val interpreter = interpreter ?: return 0.5f
+       val interpreter = interpreter ?: return 0.5f
         val inputBuffer = ByteBuffer.allocateDirect(4 * features.size).order(ByteOrder.nativeOrder())
         features.forEach { inputBuffer.putFloat(it) }
         inputBuffer.rewind()
@@ -96,9 +74,6 @@ class SpamDetectionModel @Inject constructor(
         return outputBuffer.float
     }
 
-    /**
-     * Categorize the type of spam detected
-     */
     private fun categorizeSpam(phoneNumber: String, confidence: Float): String {
         return when {
             confidence > 0.9f -> "ROBOCALL"
@@ -108,25 +83,22 @@ class SpamDetectionModel @Inject constructor(
         }
     }
 
-    /**
-     * Initialize TensorFlow Lite model from assets
-     * Should be called once during app startup
-     */
-    fun initialize() {
-        try {
-            if (interpreter == null) {
+    fun ensureInitialized() {
+        if (interpreter != null) return
+
+        synchronized(initLock) {
+            if (interpreter != null) return
+            try {
                 val model = loadModelFile(modelFileName)
                 interpreter = Interpreter(model)
+            } catch (_: Exception) {
+                interpreter = null
             }
-        } catch (e: Exception) {
-            // Log initialization error
-            interpreter = null
         }
     }
 
-    /**
-     * Load model file from assets
-     */
+    fun initialize() = ensureInitialized()
+
     private fun loadModelFile(fileName: String): ByteBuffer {
         val assetFileDescriptor = context.assets.openFd(fileName)
         val inputStream = assetFileDescriptor.createInputStream()
@@ -136,9 +108,6 @@ class SpamDetectionModel @Inject constructor(
         return fileChannel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
     }
 
-    /**
-     * Release TensorFlow Lite resources
-     */
     fun cleanup() {
         interpreter?.close()
         interpreter = null

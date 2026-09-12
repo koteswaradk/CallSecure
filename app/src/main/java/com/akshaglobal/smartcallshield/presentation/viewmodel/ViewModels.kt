@@ -28,6 +28,13 @@ import kotlinx.coroutines.flow.first
 
 enum class TrendFilter { TODAY, WEEK, MONTH, OVERALL }
 
+data class CallHistoryEntry(
+    val phoneNumber: String,
+    val displayName: String?,
+    val status: String,
+    val timestamp: Long
+)
+
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
@@ -210,6 +217,52 @@ class ContactsViewModel @Inject constructor(
     fun deleteContact(contact: ContactEntity) {
         viewModelScope.launch {
             manageContactsUseCase.deleteContact(contact)
+        }
+    }
+}
+
+@HiltViewModel
+class CallHistoryViewModel @Inject constructor(
+    private val getCallHistoryUseCase: GetCallHistoryUseCase,
+    private val contactRepository: ContactRepository
+) : ViewModel() {
+
+    private val _historyEntries = MutableStateFlow<List<CallHistoryEntry>>(emptyList())
+    val historyEntries = _historyEntries.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            combine(
+                getCallHistoryUseCase.getAllCallLogs(),
+                contactRepository.getAllContacts()
+            ) { callLogs, contacts ->
+                val contactMap = contacts
+                    .mapNotNull { contact ->
+                        val normalizedNumber = com.akshaglobal.smartcallshield.util.PhoneNumberUtils.normalize(contact.phoneNumber)
+                        if (normalizedNumber.isBlank()) null else normalizedNumber to contact.displayName
+                    }
+                    .toMap()
+
+                callLogs
+                    .filter { it.callType == CallType.INCOMING.ordinal }
+                    .sortedByDescending { it.timestamp }
+                    .map { callLog ->
+                        val normalizedNumber = com.akshaglobal.smartcallshield.util.PhoneNumberUtils.normalize(callLog.phoneNumber)
+                        val contactName = contactMap[normalizedNumber]?.takeIf { it.isNotBlank() }
+                        val status = when {
+                            callLog.wasBlocked -> "Rejected"
+                            callLog.duration > 0 -> "Received"
+                            else -> "Missed"
+                        }
+
+                        CallHistoryEntry(
+                            phoneNumber = callLog.phoneNumber,
+                            displayName = contactName,
+                            status = status,
+                            timestamp = callLog.timestamp
+                        )
+                    }
+            }.collect { _historyEntries.value = it }
         }
     }
 }

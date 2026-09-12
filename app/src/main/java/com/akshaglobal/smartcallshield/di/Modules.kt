@@ -78,8 +78,6 @@ object AiModule {
     fun provideSpamDetectionModel(
         @ApplicationContext context: Context
     ): SpamDetectionModel {
-        val model = SpamDetectionModel(context)
-        model.initialize()
-        return model
+        return SpamDetectionModel(context)
     }
 }

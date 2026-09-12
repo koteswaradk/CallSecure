@@ -1,4 +1,4 @@
-# SmartCallShield - Quick Start Guide for Developers
+# CallSecure - Quick Start Guide for Developers
 
 ## 🚀 Get Started in 5 Minutes
 
@@ -11,8 +11,8 @@ java -version
 echo $ANDROID_SDK_ROOT
 
 # Clone and navigate
-git clone https://github.com/akshaglobal/SmartCallShield.git
-cd SmartCallShield
+git clone https://github.com/akshaglobal/CallSecure.git
+cd CallSecure
 ```
 
 ### 2. Build Project
@@ -55,7 +55,7 @@ presentation/       ← Presentation Layer (UI, ViewModels)
 service/            ← Services (CallInterceptor, AI, etc)
 di/                 ← Dependency Injection (Hilt)
 MainActivity.kt     ← Entry point
-SmartCallShieldApp  ← Application class
+CallSecureApp  ← Application class
 ```
 
 ---
@@ -239,7 +239,7 @@ val Accent = Color(0xFFFF5252)
 
 ### Enable Detailed Logging
 ```kotlin
-// In SmartCallShieldApp.kt
+// In CallSecureApp.kt
 override fun onCreate() {
     super.onCreate()
     if (BuildConfig.DEBUG) {
@@ -258,7 +258,7 @@ override fun onCreate() {
 
 ### Logcat Filtering
 ```bash
-# Show only SmartCallShield logs
+# Show only CallSecure logs
 adb logcat | grep smartcallshield
 
 # Show errors and above

@@ -20,7 +20,7 @@ This guide provides comprehensive testing steps for the Call Mode Creation featu
    - (Minimum 5 contacts for comprehensive testing)
 
 2. **Grant Permissions** (if not automatic):
-   - Open Settings → Apps → SmartCallShield → Permissions
+   - Open Settings → Apps → CallSecure → Permissions
    - Enable "Contacts"
 
 3. **Fresh Database** (optional but recommended):
@@ -35,7 +35,7 @@ This guide provides comprehensive testing steps for the Call Mode Creation featu
 **Objective**: Verify dialog opens when Setup button is clicked
 
 **Steps**:
-1. Open SmartCallShield app
+1. Open CallSecure app
 2. Navigate to Settings tab
 3. Scroll to "Call Modes Management" section
 4. Observe "Setup" button in the card
@@ -169,7 +169,7 @@ This guide provides comprehensive testing steps for the Call Mode Creation featu
 - ✅ When selected, uses the first matching phone number
 
 **Notes**:
-- SmartCallShield de-duplicates by phone number automatically
+- CallSecure de-duplicates by phone number automatically
 - Test with multiple duplicate scenarios if possible
 
 ---

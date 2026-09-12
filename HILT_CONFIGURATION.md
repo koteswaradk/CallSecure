@@ -1,8 +1,8 @@
-# SmartCallShield - Hilt Dependency Injection Setup Complete ✅
+# CallSecure - Hilt Dependency Injection Setup Complete ✅
 
 ## Summary
 
-Hilt dependency injection has been successfully added to the SmartCallShield Android project. All necessary dependencies, plugins, and configurations are now in place.
+Hilt dependency injection has been successfully added to the CallSecure Android project. All necessary dependencies, plugins, and configurations are now in place.
 
 ## What Was Added
 
@@ -68,7 +68,7 @@ kotlin-ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.27" }
 
 ### 4. **Application Class Setup**
 
-#### SmartCallShieldApp.kt
+#### CallSecureApp.kt
 ```kotlin
 package com.akshaglobal.smartcallshield
 
@@ -76,7 +76,7 @@ import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class SmartCallShieldApp : Application() {
+class CallSecureApp : Application() {
     override fun onCreate() {
         super.onCreate()
         // Initialize app-level components
@@ -102,7 +102,7 @@ class MainActivity : ComponentActivity() {
 Already configured:
 ```xml
 <application
-    android:name=".SmartCallShieldApp"
+    android:name=".CallSecureApp"
     android:allowBackup="true"
     ...
 >
@@ -116,8 +116,8 @@ Four main modules for dependency provision:
 Provides Room database singleton:
 ```kotlin
 object DatabaseModule {
-    fun provideDatabase(context: Context): SmartCallShieldDatabase {
-        return SmartCallShieldDatabase.getDatabase(context)
+    fun provideDatabase(context: Context): CallSecureDatabase {
+        return CallSecureDatabase.getDatabase(context)
     }
 }
 ```
@@ -126,10 +126,10 @@ object DatabaseModule {
 Provides Data Access Objects:
 ```kotlin
 object DaoModule {
-    fun provideContactDao(database: SmartCallShieldDatabase) = database.contactDao()
-    fun provideCallLogDao(database: SmartCallShieldDatabase) = database.callLogDao()
-    fun provideSpamReportDao(database: SmartCallShieldDatabase) = database.spamReportDao()
-    fun provideDrivingModeLogDao(database: SmartCallShieldDatabase) = database.drivingModeLogDao()
+    fun provideContactDao(database: CallSecureDatabase) = database.contactDao()
+    fun provideCallLogDao(database: CallSecureDatabase) = database.callLogDao()
+    fun provideSpamReportDao(database: CallSecureDatabase) = database.spamReportDao()
+    fun provideDrivingModeLogDao(database: CallSecureDatabase) = database.drivingModeLogDao()
 }
 ```
 
@@ -220,7 +220,7 @@ The app now includes all these dependencies:
 When you run `./gradlew assembleDebug`:
 
 1. **KAPT (Kotlin Annotation Processing Tool)** processes Hilt annotations:
-   - Reads `@HiltAndroidApp` from SmartCallShieldApp
+   - Reads `@HiltAndroidApp` from CallSecureApp
    - Reads `@AndroidEntryPoint` from MainActivity
    - Generates Hilt component classes
    - Creates dependency injection factories
@@ -238,7 +238,7 @@ When you run `./gradlew assembleDebug`:
 
 KAPT will generate (among others):
 - `Hilt_MainActivity.java`
-- `SmartCallShieldApp_GeneratedInjector.java`
+- `CallSecureApp_GeneratedInjector.java`
 - `HiltComponents.java`
 - Various dependency provision factories
 
@@ -248,7 +248,7 @@ These are automatically compiled into the APK.
 
 ### Initial Build (Fresh)
 ```bash
-cd /Users/koteswara/Documents/aOS\ code/SmartCallShield
+cd /Users/koteswara/Documents/aOS\ code/CallSecure
 ./gradlew clean assembleDebug --refresh-dependencies
 ```
 
@@ -383,8 +383,8 @@ Convert the plain objects to proper Hilt modules:
 object DatabaseModule {
     @Singleton
     @Provides
-    fun provideDatabase(@ApplicationContext context: Context): SmartCallShieldDatabase {
-        return SmartCallShieldDatabase.getDatabase(context)
+    fun provideDatabase(@ApplicationContext context: Context): CallSecureDatabase {
+        return CallSecureDatabase.getDatabase(context)
     }
 }
 ```
@@ -399,15 +399,15 @@ object DatabaseModule {
 | **Hilt Android Lib** | ✅ Added | `implementation(libs.hilt.android)` |
 | **Hilt Compiler** | ✅ Added | `kapt(libs.hilt.compiler)` |
 | **Hilt Navigation** | ✅ Added | `implementation(libs.hilt.navigation.compose)` |
-| **@HiltAndroidApp** | ✅ Added | On SmartCallShieldApp |
+| **@HiltAndroidApp** | ✅ Added | On CallSecureApp |
 | **@AndroidEntryPoint** | ✅ Added | On MainActivity |
-| **Manifest** | ✅ Configured | android:name=".SmartCallShieldApp" |
+| **Manifest** | ✅ Configured | android:name=".CallSecureApp" |
 | **DI Modules** | ✅ Created | Database, Dao, Preferences, AI |
 
 ## Files Modified
 
 1. **app/build.gradle.kts** - Added Hilt plugins, KAPT config, dependencies
-2. **app/src/main/java/com/akshaglobal/smartcallshield/SmartCallShieldApp.kt** - Added @HiltAndroidApp
+2. **app/src/main/java/com/akshaglobal/smartcallshield/CallSecureApp.kt** - Added @HiltAndroidApp
 3. **app/src/main/java/com/akshaglobal/smartcallshield/MainActivity.kt** - Has @AndroidEntryPoint
 4. **app/src/main/java/com/akshaglobal/smartcallshield/di/Modules.kt** - DI module definitions
 5. **app/src/main/AndroidManifest.xml** - Already configured correctly

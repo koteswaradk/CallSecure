@@ -64,7 +64,6 @@ private fun CallModesManagementScreenPreview() {
 @Composable
 fun CallModesManagementScreen(viewModel: CallModesViewModel = hiltViewModel()) {
     val context = LocalContext.current
-    // Remove showToast lambda logic, only use toastEvent collector
     LaunchedEffect(viewModel) {
         viewModel.toastEvent.collect { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()

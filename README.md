@@ -1,4 +1,4 @@
-# SmartCallShield - Production Ready Android App
+# CallSecure - Production Ready Android App
 
 A privacy-focused, AI-powered call management system that blocks spam, filters unwanted calls, and provides intelligent call handling across multiple modes.
 
@@ -157,8 +157,8 @@ Users have complete control:
 
 1. **Clone Repository**
 ```bash
-git clone https://github.com/akshaglobal/SmartCallShield.git
-cd SmartCallShield
+git clone https://github.com/akshaglobal/CallSecure.git
+cd CallSecure
 ```
 
 2. **Setup Local Properties**
@@ -384,5 +384,5 @@ Contributions welcome! Please read CONTRIBUTING.md for guidelines.
 
 ---
 
-**SmartCallShield**: Taking control of your calls, respecting your privacy. 🔒📱
+**CallSecure**: Taking control of your calls, respecting your privacy. 🔒📱
 

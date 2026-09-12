@@ -1,4 +1,4 @@
-# Quick Reference: Hilt Setup for SmartCallShield
+# Quick Reference: Hilt Setup for CallSecure
 
 ## ✅ What Was Done
 
@@ -38,12 +38,12 @@ dependencies {
 }
 ```
 
-### 2. SmartCallShieldApp.kt
+### 2. CallSecureApp.kt
 ```diff
 + import dagger.hilt.android.HiltAndroidApp
 
 + @HiltAndroidApp
-class SmartCallShieldApp : Application() {
+class CallSecureApp : Application() {
     // existing code
 }
 ```
@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
 
 ### Clean Build with Hilt
 ```bash
-cd /Users/koteswara/Documents/aOS\ code/SmartCallShield
+cd /Users/koteswara/Documents/aOS\ code/CallSecure
 ./gradlew clean assembleDebug --refresh-dependencies
 ```
 
@@ -111,7 +111,7 @@ ksp {
 
 ### Manifest
 ```xml
-<application android:name=".SmartCallShieldApp" ...>
+<application android:name=".CallSecureApp" ...>
 ```
 
 ## 🧪 Verify It Works
@@ -123,7 +123,7 @@ find app/build/generated -name "*Hilt*.java" | head -10
 
 Should show files like:
 - `Hilt_MainActivity.java`
-- `SmartCallShieldApp_GeneratedInjector.java`
+- `CallSecureApp_GeneratedInjector.java`
 
 ## 📚 Using Hilt in Your Code
 

@@ -2,7 +2,7 @@
     <!-- App Info -->
     <string name="app_name">CallSecure</string>
     <string name="app_version">1.0.0</string>
-    <string name="app_description">Smart Call Manager with AI Spam Protection and Custom Filtering Modes</string>
+    <string name="app_description">CallSecure: AI Spam Protection and Custom Filtering Modes</string>
 
     <!-- Dashboard Screen -->
     <string name="dashboard_title">CallSecure</string>

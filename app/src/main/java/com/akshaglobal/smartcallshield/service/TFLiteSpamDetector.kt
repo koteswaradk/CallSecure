@@ -27,7 +27,6 @@ class TFLiteSpamDetector(context: Context) {
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
     }
 
-    // Improved: Extract real features from phone number for the model
     private fun extractFeatures(phoneNumber: String): FloatArray {
         val digits = phoneNumber.filter { it.isDigit() }
         return FloatArray(10) { index ->
@@ -47,7 +46,6 @@ class TFLiteSpamDetector(context: Context) {
         }
     }
 
-    // Example: input is a float array of features, output is a float array of probabilities
     fun predict(phoneNumber: String): Int {
         val features = extractFeatures(phoneNumber)
         val input = arrayOf(features)
