@@ -224,31 +224,29 @@ class ContactsViewModel @Inject constructor(
 @HiltViewModel
 class CallHistoryViewModel @Inject constructor(
     private val getCallHistoryUseCase: GetCallHistoryUseCase,
-    private val contactRepository: ContactRepository
+    private val deviceContactsProvider: com.akshaglobal.smartcallshield.data.contacts.DeviceContactsProvider
 ) : ViewModel() {
 
     private val _historyEntries = MutableStateFlow<List<CallHistoryEntry>>(emptyList())
     val historyEntries = _historyEntries.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            combine(
-                getCallHistoryUseCase.getAllCallLogs(),
-                contactRepository.getAllContacts()
-            ) { callLogs, contacts ->
-                val contactMap = contacts
-                    .mapNotNull { contact ->
-                        val normalizedNumber = com.akshaglobal.smartcallshield.util.PhoneNumberUtils.normalize(contact.phoneNumber)
-                        if (normalizedNumber.isBlank()) null else normalizedNumber to contact.displayName
-                    }
-                    .toMap()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            getCallHistoryUseCase.getAllCallLogs().collect { callLogs ->
+                val deviceContacts = deviceContactsProvider.fetchDeviceContacts()
+                val contactMap = deviceContacts
+                    .associateBy(
+                        { com.akshaglobal.smartcallshield.util.PhoneNumberUtils.normalize(it.phoneNumber) },
+                        { it.displayName }
+                    )
 
-                callLogs
-                    .filter { it.callType == CallType.INCOMING.ordinal }
+                val entries = callLogs
+                    .filter { it.callType == com.akshaglobal.smartcallshield.data.model.CallType.INCOMING.ordinal }
                     .sortedByDescending { it.timestamp }
                     .map { callLog ->
                         val normalizedNumber = com.akshaglobal.smartcallshield.util.PhoneNumberUtils.normalize(callLog.phoneNumber)
                         val contactName = contactMap[normalizedNumber]?.takeIf { it.isNotBlank() }
+                        
                         val status = when {
                             callLog.wasBlocked -> "Rejected"
                             callLog.duration > 0 -> "Received"
@@ -262,7 +260,9 @@ class CallHistoryViewModel @Inject constructor(
                             timestamp = callLog.timestamp
                         )
                     }
-            }.collect { _historyEntries.value = it }
+                
+                _historyEntries.value = entries
+            }
         }
     }
 }
