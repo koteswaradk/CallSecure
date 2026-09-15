@@ -40,6 +40,7 @@ import com.akshaglobal.smartcallshield.presentation.viewmodel.TrendFilter
 import com.akshaglobal.smartcallshield.presentation.viewmodel.SpamReportViewModel
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
@@ -253,10 +254,25 @@ private fun MPAndroidChartTrendsGraph(callTrends: List<Pair<String, Int>>) {
                 setBackgroundColor(surfaceColor)
                 description.isEnabled = false
                 axisRight.isEnabled = false
+                axisLeft.isEnabled = true
+                axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
                 axisLeft.textColor = onSurfaceColor
+                axisLeft.setTextSize(10f)
+                axisLeft.setXOffset(12f)
+                axisLeft.setSpaceTop(10f)
+                axisLeft.setSpaceBottom(10f)
+                axisLeft.setDrawGridLines(true)
+                axisLeft.setDrawAxisLine(false)
+                axisLeft.setLabelCount(6, true)
+                axisLeft.setGranularity(0.2f)
                 xAxis.position = XAxis.XAxisPosition.BOTTOM
                 xAxis.textColor = onSurfaceColor
                 xAxis.setDrawGridLines(false)
+                xAxis.setAvoidFirstLastClipping(true)
+                xAxis.setLabelCount(callTrends.size.coerceAtMost(6), true)
+                setExtraOffsets(18f, 8f, 12f, 20f)
+                setViewPortOffsets(24f, 8f, 10f, 16f)
+                minOffset = 18f
                 legend.isEnabled = false
             }
         },
